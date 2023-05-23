@@ -19,6 +19,7 @@ A powerful antivirus built using Electron framework and python
 - Vulnerability Scanner [CVE lookup]
 - MITRE ATT&CK analysis
 - In process interruption of malware execution
+- [LINUX] CalmAV integration
 
 ### Tech Stack:
 - Python 
@@ -42,3 +43,7 @@ A powerful antivirus built using Electron framework and python
     - `npm install` to install dependencies 
     - `npm run watch` to compile using webpack 
     - Finally `npm start` to run the app
+ 
+ ### Target Environment
+ - Currently in development with main focus towards Windows [both 32-bit and 64x] systems
+ - Extending capabilites towards Linux at a later stage
