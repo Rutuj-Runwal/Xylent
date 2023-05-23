@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self'">
+    <title>Document</title>
+    <style>
+        body{
+            margin: 0px !important;
+            -webkit-app-region: drag;
+        }
+        #header {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(#444444, #333333);
+  color: #bbbbbb;
+}
+
+#headerContent {
+    -webkit-app-region: no-drag;
+  margin-left: 10px;
+}
+
+#page {
+  display: flex;
+  height: calc( 100vh - 30px);
+  /* calculate the height. Header is 30px */
+}
+
+#sideBar {
+  width: 100px;
+}
+
+#content {
+  flex: 1 0 auto;
+  padding: 15px;
+  /* enable grow, disable shrink */
+}
+
+/* EXPERIMENTAL  */
+
+/* 1. Animation for "scanning" */
+@keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+}
+
+.loading {
+  animation: spin 1s linear infinite;
+  width:1rem;
+  height:1rem;
+  display:block;
+  
+  border: 4px solid red;
+  border-top-color: transparent;
+  border-radius: 50%;
+}
+
+/* 1. Animation for "scanning" */
+
+
+/* EXPERIMENTAL  */
+
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script src="./build/js/app.js"></script>
+</body>
+</html>
