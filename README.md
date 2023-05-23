@@ -5,8 +5,8 @@ A powerful antivirus built using Electron framework and python
 
 ### Expected Features
 - Real Time System Watch
-- File Insights: Virustotal based quering, 
-- Web Insights: whois lookup for inbound/outbound urls, virustotal/Mcafee siteadvisor
+- File Insights: [VirusTotal](https://github.com/Rutuj-Runwal/Context-Menu-Scanner) based quering, 
+- Web Insights: whois lookup for inbound/outbound urls, virustotal / [McAfee siteadvisor](https://github.com/Rutuj-Runwal/MalwareProtection)
 - Database based quering(md5 and sha256)
 - AI based flow detector/Heuristic
 - Basic Scans -> Quick,Full,Custom
@@ -14,8 +14,12 @@ A powerful antivirus built using Electron framework and python
     - Cache cleaner -> temp,prefetch, Browser cache...
     - Disable/Enable startup 
 
+### Ambitious/Nice-To-Haves' Features
+- Vulnerability Scanner [CVE lookup]
+- MITRE ATT&CK analysis
+
 ### Tech Stack:
-- Python - 
+- Python 
     - Flask 
     - yara
 - ElectronJS
@@ -23,8 +27,11 @@ A powerful antivirus built using Electron framework and python
 - Webpack/babel
 
 > npm i
+
 > npm run watch
+
 > python engine.py
+
 > npm start
 
 ### Architecture
