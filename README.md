@@ -1,8 +1,9 @@
 # Xylent
 A powerful antivirus built using Electron framework and python
 
-### Expected Features
+⚠ Work in Progress
 
+### Expected Features
 - Real Time System Watch
 - File Insights: Virustotal based quering, 
 - Web Insights: whois lookup for inbound/outbound urls, virustotal/Mcafee siteadvisor
