@@ -25,7 +25,7 @@ root.render(
         <div id="header">
             <div id="headerContent">
                 XYLENT AV⚡
-                {/* TODO: Make this a custom title frame for window */}
+                {/* TODO: Make this a custom window title frame */}
             </div>
         </div>
         <div id="page">
