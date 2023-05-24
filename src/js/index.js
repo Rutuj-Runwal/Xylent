@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import Sidebar from './Sidebar';
 import StartupOptimizer from './StartupOptimizer';
+import ScannerInterface from './ScannerInterface';
 window.React = React;
 
 // const router = createHashRouter(
@@ -36,6 +37,7 @@ root.render(
                 <Route path='/' element={<Status />} />
                 <Route path='/status' element={<Status />} />
                 <Route path='/optimize' element={<StartupOptimizer />}></Route>
+                <Route path='/scanUI' element={<ScannerInterface />}></Route>
             </Routes>
         </div>
     </HashRouter>
