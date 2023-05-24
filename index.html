@@ -1,77 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self'">
-    <title>Document</title>
-    <style>
-        body{
-            margin: 0px !important;
-            -webkit-app-region: drag;
-        }
-        #header {
-  height: 30px;
-  display: flex;
-  align-items: center;
-  background: linear-gradient(#444444, #333333);
-  color: #bbbbbb;
-}
-
-#headerContent {
-    -webkit-app-region: no-drag;
-  margin-left: 10px;
-}
-
-#page {
-  display: flex;
-  height: calc( 100vh - 30px);
-  /* calculate the height. Header is 30px */
-}
-
-#sideBar {
-  width: 100px;
-}
-
-#content {
-  flex: 1 0 auto;
-  padding: 15px;
-  /* enable grow, disable shrink */
-}
-
-/* EXPERIMENTAL  */
-
-/* 1. Animation for "scanning" */
-@keyframes spin {
-    0% {
-      transform: rotate(0deg);
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'">
+  <title>Document</title>
+  <style>
+    body {
+      margin: 0px !important;
+      -webkit-app-region: drag;
     }
-    100% {
-      transform: rotate(360deg);
+
+    /* GLOBAL */
+    .flex_row {
+      display: flex;
+      flex-direction: row;
     }
-}
 
-.loading {
-  animation: spin 1s linear infinite;
-  width:1rem;
-  height:1rem;
-  display:block;
-  
-  border: 4px solid red;
-  border-top-color: transparent;
-  border-radius: 50%;
-}
+    .spc_btwn {
+      justify-content: space-between;
+    }
 
-/* 1. Animation for "scanning" */
+    .just_cent {
+      align-items: center;
+      justify-content: center;
+    }
+
+    .flex_col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .statBox {
+      border: 1px solid grey;
+      border-radius: 10px;
+      width: 200px;
+      height: 50px;
+    }
+
+    /* GLOBAL */
+
+    #header {
+      height: 30px;
+      display: flex;
+      align-items: center;
+      background: linear-gradient(#444444, #333333);
+      color: #bbbbbb;
+    }
+
+    #headerContent {
+      -webkit-app-region: no-drag;
+      margin-left: 10px;
+    }
+
+    #page {
+      display: flex;
+      height: calc(100vh - 30px);
+      /* calculate the height. Header is 30px */
+    }
+
+    #sideBar {
+      width: 100px;
+      background-color: lightblue;
+      color: black;
+    }
+
+    .sideBar_Item {
+      height: 100px;
+      cursor: pointer;
+    }
+
+    .sideBar_Item_link {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    #content {
+      /* flex: 1 0 auto; */
+      width: 680px;
+      padding: 10px;
+      /* enable grow, disable shrink */
+    }
+
+    #homeContent {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #homeScanNow_Btn {
+      border-radius: 20px;
+      width: 150px;
+      height: 35px;
+      border: none;
+      background-color: #00B01D;
+      color: white;
+      cursor: pointer;
+      padding: 5px;
+      font-size: 17px;
+    }
+
+    /* check mark */
+    .circle {
+      position: relative;
+      background: #00B01D;
+      border-radius: 100%;
+      height: 120px;
+      width: 120px;
+    }
+
+    .checkMark {
+      position: absolute;
+      transform: rotate(50deg) translate(-50%, -50%);
+      left: 27%;
+      top: 43%;
+      height: 60px;
+      width: 25px;
+      border-bottom: 5px solid #fff;
+      border-right: 5px solid #fff;
+    }
+
+    .circle:before,
+    .circle:after {
+      content: '';
+      display: block;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      border: 3px solid #00B01D;
+      border-radius: 50%;
+    }
 
 
-/* EXPERIMENTAL  */
+    .circle:before {
+      animation: ripple 2s linear infinite;
+    }
 
-    </style>
+    .circle:after {
+      animation: ripple 2s linear 1s infinite;
+    }
+
+    @keyframes ripple {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1.4);
+        opacity: 0;
+      }
+    }
+
+    /* check mark */
+
+    /* EXPERIMENTAL  */
+    /* 1. Animation for "scanning" - To replace */
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading {
+      animation: spin 1s linear infinite;
+      width: 1rem;
+      height: 1rem;
+      display: block;
+
+      border: 4px solid red;
+      border-top-color: transparent;
+      border-radius: 50%;
+    }
+
+    /* 1. Animation for "scanning" - To replace */
+
+
+    /* EXPERIMENTAL  */
+  </style>
 </head>
+
 <body>
-    <div id="root"></div>
-    <script src="./build/js/app.js"></script>
+  <div id="root"></div>
+  <script src="./build/js/app.js"></script>
 </body>
+
 </html>

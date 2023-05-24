@@ -24,7 +24,7 @@ root.render(
     <HashRouter>
         <div id="header">
             <div id="headerContent">
-                XYLENT AV⚡
+                XYLENT Antivirus⚡
                 {/* TODO: Make this a custom window title frame */}
             </div>
         </div>

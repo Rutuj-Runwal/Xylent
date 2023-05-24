@@ -60,26 +60,59 @@ function Status() {
   //   });
   // }
   return (
-    <div>
         <div id="content">
-          <div>
-            <h3 style={{textAlign:'center'}}>Welcome to Xylent!</h3>
-            <button onClick={quickScan}>QUICK SCAN!</button>
-            <i className="loading" style={{ display: 'none' }}></i>
-              {Object.keys(scanReport).length ? 
-                    <div id="scanStats">
-                        <span>Total Files Analyzed: {Object.keys(scanReport).length}</span>
-                        <br/>
-                        <span>Files Skipped: {skippedFilesCount}</span>
-                        <br />
-                        <span>Malware Detected: {unsafeFilesCount}</span>
-                    </div>
-                  : <></>
-              }
-            {/* <h2 id="nowScanning">{currScan}</h2> */}
+          <div id="homeContent">
+            <h3 style={{"textAlign":'center'}}>Welcome to Xylent Antivirus!</h3>
+            <div className="flex_row just_cent">
+              <div>
+                  <div className="circle">
+                    <div className="checkMark"></div>
+                  </div>
+              </div>
+              <div className='flex_col just_cent'>
+                  <p style={{ 'fontSize': '30px' }}>&nbsp;&nbsp;&nbsp;System is Secure</p>
+                  <button onClick={quickScan} id="homeScanNow_Btn">Scan Now</button>
+              </div>
             </div>
+            <i className="loading" style={{ display: 'none' }}></i>
+            {Object.keys(scanReport).length ?
+              <div id="scanStats">
+                <span>Total Files Analyzed: {Object.keys(scanReport).length}</span>
+                <br />
+                <span>Files Skipped: {skippedFilesCount}</span>
+                <br />
+                <span>Malware Detected: {unsafeFilesCount}</span>
+              </div>
+              : <></>
+            }
+            <br /><br />
+
+            <div className='flex_row'>
+              <div className='statBox flex_col'>
+                <div className='statBox_head flex_row spc_btwn'>
+                  <div>{skippedFilesCount}</div>
+                  <div>IMG</div>
+                </div>
+                <div>Malware/Viruses</div>
+              </div>
+              <div className='statBox flex_col'>
+                <div className='statBox_head flex_row spc_btwn'>
+                  <div>{skippedFilesCount}</div>
+                  <div>IMG</div>
+                </div>
+                <div>Malware/Viruses</div>
+              </div>
+              <div className='statBox flex_col'>
+                <div className='statBox_head flex_row spc_btwn'>
+                  <div>{skippedFilesCount}</div>
+                  <div>IMG</div>
+                </div>
+                <div>Malware/Viruses</div>
+              </div>
+            </div>
+            {/* <h2 id="nowScanning">{currScan}</h2> */}
+          </div>
         </div>
-    </div>
   )
 }
 
