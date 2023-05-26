@@ -1,6 +1,6 @@
 from flask import request,Flask
-
 from scanner import Scanner
+from systemWatcher import systemWatcher
 
 app = Flask(__name__)
 
@@ -14,7 +14,8 @@ for i in range(len(temp)):
     signaturesData[temp[i].split(":")[0]] = temp[i].split(":")[1]
 
 print("Signatures loaded!")
-
+XylentScanner = Scanner(signatures=signaturesData)
+systemWatcher(XylentScanner)
 @app.route("/getActiveProcesses",methods=['GET'])
 def activeProcess():
     import subprocess
@@ -98,8 +99,6 @@ def scans():
     # Intialize scanner object
     import os
     import time
-    RRScanner = Scanner(signatures=signaturesData)
-
     # https://peps.python.org/pep-0635/
     if SCAN_TYPE=="Quick":
         # TODO: Add paths based on the platform, i.e. windows,linux,macos
@@ -112,7 +111,7 @@ def scans():
         Appdata = os.path.expandvars(AppdataPath)
         desktop = os.path.expandvars(desktopPath)
         # x = time.time()
-        scanReport = RRScanner.scanFolders(location=[temp])
+        scanReport = XylentScanner.scanFolders(location=[temp])
         # y = time.time()
         # print("--------------")
         # print("Time taken:",y-x)

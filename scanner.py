@@ -36,6 +36,7 @@ class Scanner:
             return "RR_permission_error"
 
     def scanFile(self,path):
+            print(path)
             detectionSpace = '' 
             hashToChk = self.getFileHash(path)
             # Time Taken: O(n) 

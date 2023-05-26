@@ -38,21 +38,21 @@ function Status() {
               <div className='statBox flex_col'>
                 <div className='statBox_head flex_row spc_btwn'>
                   <div>{skippedFilesCount}</div>
-                  <div>IMG</div>
+                  <div>Placeholder</div>
                 </div>
                 <div>Malware/Viruses</div>
               </div>
               <div className='statBox flex_col'>
                 <div className='statBox_head flex_row spc_btwn'>
                   <div>{skippedFilesCount}</div>
-                  <div>IMG</div>
+                  <div>Placeholder</div>
                 </div>
                 <div>Malware/Viruses</div>
               </div>
               <div className='statBox flex_col'>
                 <div className='statBox_head flex_row spc_btwn'>
                   <div>{skippedFilesCount}</div>
-                  <div>IMG</div>
+                  <div>Placeholder</div>
                 </div>
                 <div>Malware/Viruses</div>
               </div>
