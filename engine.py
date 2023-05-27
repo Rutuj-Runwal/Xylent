@@ -1,6 +1,7 @@
 from flask import request,Flask
 from scanner import Scanner
 from systemWatcher import systemWatcher
+import threading
 
 app = Flask(__name__)
 
@@ -15,7 +16,14 @@ for i in range(len(temp)):
 
 print("Signatures loaded!")
 XylentScanner = Scanner(signatures=signaturesData)
-systemWatcher(XylentScanner)
+def startSystemWatcher():
+    systemWatcher(XylentScanner)
+
+
+realTime_thread = threading.Thread(
+    target=startSystemWatcher, daemon=True)
+realTime_thread.start()
+
 @app.route("/getActiveProcesses",methods=['GET'])
 def activeProcess():
     import subprocess
