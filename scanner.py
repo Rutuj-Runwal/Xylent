@@ -59,7 +59,7 @@ class Scanner:
                     detectionSpace += " Yara: "+"YaraBasedEntity"
                     # return "aeicar!"
             except Exception:
-                print('packer exception, you must read yara docs')
+                print('packer exception')
             return detectionSpace
             # TODO: if file is packed: additional detection
             # TODO: if file is a .zip,.rar,.7z and other varients ADDITIONAL detections
