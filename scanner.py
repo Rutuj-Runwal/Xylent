@@ -17,10 +17,11 @@ peid_rules = yara.compile(filepaths={
 
 class Scanner:
     fileTypes = [".vbs", ".ps", ".ps1", ".rar", ".tmp", ".bas", ".bat", ".chm", ".cmd", ".com", ".cpl", ".crt", ".dll", ".exe", ".hta", ".js", ".lnk", ".msc", ".ocx", ".pcd", ".pif", ".pot", ".pdf", ".reg", ".scr", ".sct", ".sys", ".url", ".vb", ".vbe", ".wsc", ".wsf", ".wsh", ".ct", ".t", ".input",".war", ".jsp", ".jspx", ".php", ".asp", ".aspx", ".doc", ".docx", ".pdf", ".xls", ".xlsx", ".ppt", ".pptx", ".tmp", ".log", ".dump", ".pwd", ".w", ".txt", ".conf", ".cfg", ".conf", ".config", ".psd1", ".psm1", ".ps1xml", ".clixml", ".psc1", ".pssc", ".pl", ".www", ".rdp", ".jar", ".docm", ".sys"]
-    
+
     def __init__(self,signatures):
         self.__signatures = signatures
         print("-----Scanner Initialized-----")
+        self.quar = Quarantine()
 
     def getFileHash(self,path):
         hash = ""
@@ -58,8 +59,7 @@ class Scanner:
                     print('packers detected')
                     print(matches)
                     detectionSpace += " Yara: "+"YaraBasedEntity"
-                    quar = Quarantine(path)
-                    quar.quarantine()
+                    self.quar.quarantine(path)
                     # return "aeicar!"
             except Exception:
                 print('packer exception')
