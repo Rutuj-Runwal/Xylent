@@ -35,7 +35,7 @@ def systemWatcher(XylentScanner):
       pathToScan = os.path.join(path_to_watch, file)
 
       if "C:\\Windows\\Prefetch\\" in pathToScan:
-        
+
         pathToScan = ""
       elif "C:\\Windows\\Temp" in pathToScan:
         pathToScan = ""

@@ -1,6 +1,7 @@
 import hashlib
 import os
 import yara
+from quarantineThreats import Quarantine
 
 rules_path = './rules/'
 
@@ -32,7 +33,7 @@ class Scanner:
                 return hash
         except (PermissionError, OSError):
             # TODO: Run app with admin privilage to avoid PermissionError or OSError for certain locations and filetypes
-            print("Permission Error")
+            # print("Permission Error")
             return "RR_permission_error"
 
     def scanFile(self,path):
@@ -57,6 +58,8 @@ class Scanner:
                     print('packers detected')
                     print(matches)
                     detectionSpace += " Yara: "+"YaraBasedEntity"
+                    quar = Quarantine(path)
+                    quar.quarantine()
                     # return "aeicar!"
             except Exception:
                 print('packer exception')
