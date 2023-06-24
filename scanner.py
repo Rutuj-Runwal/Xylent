@@ -3,12 +3,14 @@ import os
 import yara
 from quarantineThreats import Quarantine
 
-rules_path = './rules/'
+# rules_path = './rules/'
+# rules_path = 'D:/Xylent/'
 
-peid_rules = yara.compile(filepaths={
+# peid_rules = yara.compile(filepaths={
 
-    'namespace1': rules_path+'eicar.yara'
-})
+#     'namespace1': rules_path+'eicar.yara'
+# })
+# peid_rules = yara.load(rules_path+"compiledRules")
 # packer_rules = yara.compile(rules_path + 'packer.yar')
 # crypto_rules = yara.compile(rules_path + 'crypto.yar')
 
@@ -18,8 +20,11 @@ peid_rules = yara.compile(filepaths={
 class Scanner:
     fileTypes = [".vbs", ".ps", ".ps1", ".rar", ".tmp", ".bas", ".bat", ".chm", ".cmd", ".com", ".cpl", ".crt", ".dll", ".exe", ".hta", ".js", ".lnk", ".msc", ".ocx", ".pcd", ".pif", ".pot", ".pdf", ".reg", ".scr", ".sct", ".sys", ".url", ".vb", ".vbe", ".wsc", ".wsf", ".wsh", ".ct", ".t", ".input",".war", ".jsp", ".jspx", ".php", ".asp", ".aspx", ".doc", ".docx", ".pdf", ".xls", ".xlsx", ".ppt", ".pptx", ".tmp", ".log", ".dump", ".pwd", ".w", ".txt", ".conf", ".cfg", ".conf", ".config", ".psd1", ".psm1", ".ps1xml", ".clixml", ".psc1", ".pssc", ".pl", ".www", ".rdp", ".jar", ".docm", ".sys"]
 
-    def __init__(self,signatures):
+    def __init__(self,signatures,rootPath):
         self.__signatures = signatures
+        self.__rootPath = rootPath
+        print(rootPath)
+        self.peid_rules = yara.load(self.__rootPath+"\compiledRules")
         print("-----Scanner Initialized-----")
         self.quar = Quarantine()
 
@@ -51,13 +56,28 @@ class Scanner:
                 for hash in self.__signatures:
                     if hash==str(hashToChk):
                         print(self.__signatures[hash])
+                        from plyer import notification
+                        notif_str = "Xylent taking action against detected malware " + path
+                        notification.notify(
+                            title="RR Malware Detected",
+                            message=notif_str,
+                            # displaying time
+                            timeout=2
+                        )
                         detectionSpace = "SignatureBased: " + self.__signatures[hash]
             # YARA RULES DETECTION
             try:
-                matches = peid_rules.match(path)
+                matches = self.peid_rules.match(path)
                 if matches:
-                    print('packers detected')
                     print(matches)
+                    from plyer import notification
+                    notif_str = "Xylent is taking action against detected malware "+ path
+                    notification.notify(
+                        title="YARA: Malware Detected",
+                        message=notif_str,
+                        # displaying time
+                        timeout=2
+                    )
                     detectionSpace += " Yara: "+"YaraBasedEntity"
                     self.quar.quarantine(path)
                     # return "aeicar!"
@@ -85,6 +105,7 @@ class Scanner:
         for files in directories:
             # print(files)
             try:
+                # TODO: use os.path.splittext or other effective alternatives
                 fileExtension = "."+files.split(".")[-1]
             except Exception:
                 # TODO: better way to get file-extension. Prevent filename "cloaking" malware i.e. foo.txt.exe

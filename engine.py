@@ -1,10 +1,11 @@
+import os
+import yara
 from flask import request,Flask
 from scanner import Scanner
 from systemWatcher import systemWatcher
 import threading
 
 app = Flask(__name__)
-
 # Load in SHA256 signatures
 PATH = "./rules/sha256_db.txt"
 signaturesData = {}
@@ -15,7 +16,58 @@ for i in range(len(temp)):
     signaturesData[temp[i].split(":")[0]] = temp[i].split(":")[1]
 
 print("Signatures loaded!")
-XylentScanner = Scanner(signatures=signaturesData)
+
+# compile yara rulesets
+BASE_PATH = app.root_path
+yaraRules = ""
+dummy = ""
+rule_count = 0
+# for yara_rule_directory in self.yara_rule_directories:
+yara_rule_directory = os.path.join(BASE_PATH, "signature-base/yara".replace("/", os.sep))
+if not os.path.exists(yara_rule_directory):
+    print("Cannot find signature base")
+if not os.path.exists(BASE_PATH+'/compiledRules'):
+    for root, directories, files in os.walk(yara_rule_directory, followlinks=False):
+        for file in files:
+            try:
+                # Full Path
+                yaraRuleFile = os.path.join(root, file)
+
+                # Skip hidden, backup or system related files
+                if file.startswith(".") or file.startswith("~") or file.startswith("_"):
+                    continue
+
+                # Extension
+                extension = os.path.splitext(file)[1].lower()
+
+                # Skip all files that don't have *.yar or *.yara extensions
+                if extension != ".yar" and extension != ".yara":
+                    continue
+
+                with open(yaraRuleFile, 'r') as yfile:
+                    yara_rule_data = yfile.read()
+
+                # Add the rule
+                rule_count = rule_count+1
+                yaraRules += yara_rule_data
+
+            except Exception as e:
+                print("Error reading signature file %s ERROR: %s" %
+                        (yaraRuleFile, sys.exc_info()[1]))
+    try:
+        compiledRules = yara.compile(source=yaraRules, externals={
+            'filename': dummy,
+            'filepath': dummy,
+            'extension': dummy,
+            'filetype': dummy,
+            'md5': dummy,
+            'owner': dummy,
+        })
+        compiledRules.save(BASE_PATH+"/compiledRules")
+        print("Initialized %d Yara rules" % rule_count)
+    except Exception as e:
+        print("Error during YARA rule compilation ERROR: - please fix the issue in the rule set")
+XylentScanner = Scanner(signatures=signaturesData,rootPath=app.root_path)
 def startSystemWatcher():
     systemWatcher(XylentScanner)
 
