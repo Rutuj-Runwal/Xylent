@@ -22,7 +22,8 @@ class Scanner:
 
     def __init__(self,signatures,rootPath):
         self.__signatures = signatures
-        self.__rootPath = rootPath
+        # self.__rootPath = rootPath
+        self.__rootPath = "./"
         print(rootPath)
         self.peid_rules = yara.load(self.__rootPath+"\compiledRules")
         print("-----Scanner Initialized-----")
@@ -45,6 +46,7 @@ class Scanner:
     def scanFile(self,path):
             print(path)
             detectionSpace = '' 
+            suspScore = 0
             hashToChk = self.getFileHash(path)
             # Time Taken: O(n) 
             # TODO: optimize using Binary search for O(log(n))
@@ -57,32 +59,31 @@ class Scanner:
                     if hash==str(hashToChk):
                         print(self.__signatures[hash])
                         from plyer import notification
-                        notif_str = "Xylent taking action against detected malware " + path
-                        notification.notify(
-                            title="RR Malware Detected",
-                            message=notif_str,
-                            # displaying time
-                            timeout=2
-                        )
+                        notif_str = "Xylent taking action against detected malware "+ path
+                        suspScore+=100
                         detectionSpace = "SignatureBased: " + self.__signatures[hash]
             # YARA RULES DETECTION
             try:
                 matches = self.peid_rules.match(path)
                 if matches:
+                    suspScore+=40
                     print(matches)
                     from plyer import notification
                     notif_str = "Xylent is taking action against detected malware "+ path
-                    notification.notify(
-                        title="YARA: Malware Detected",
-                        message=notif_str,
-                        # displaying time
-                        timeout=2
-                    )
                     detectionSpace += " Yara: "+"YaraBasedEntity"
-                    self.quar.quarantine(path)
                     # return "aeicar!"
             except Exception:
                 print('packer exception')
+
+            if suspScore >= 40:
+                notification.notify(
+                    title="Malware Detected",
+                    message=notif_str,
+                    # displaying time
+                    timeout=2
+                )
+                self.quar.quarantine(path)
+
             return detectionSpace
             # TODO: if file is packed: additional detection
             # TODO: if file is a .zip,.rar,.7z and other varients ADDITIONAL detections

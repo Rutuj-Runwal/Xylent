@@ -34,7 +34,26 @@ function createWindow() {
     // } else {
     //     console.log("NO, signatures already compiled at: userPath")
     // }
-
+    let backend;
+    backend = path.join(process.cwd(), './engine.exe')
+    var execfile = require('child_process').execFile;
+    execfile(
+        backend,
+        {
+            windowsHide: true,
+        },
+        (err, stdout, stderr) => {
+            if (err) {
+                console.log(err);
+            }
+            if (stdout) {
+                console.log(stdout);
+            }
+            if (stderr) {
+                console.log(stderr);
+            }
+        }
+    )
     win = new BrowserWindow({
         width: 800,
         height: 620,
@@ -58,6 +77,15 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+    const { exec } = require('child_process');
+    exec('taskkill / f / t / im engine.exe', (err, stdout, stderr) => {
+        if (err) {
+            console.log(err)
+            return;
+        }
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
+    });
     if (process.platform !== 'darwin') {
         app.quit()
     }

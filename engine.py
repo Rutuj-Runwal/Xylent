@@ -4,7 +4,7 @@ from flask import request,Flask
 from scanner import Scanner
 from systemWatcher import systemWatcher
 import threading
-
+# Compile to executable with: pyinstaller -F engine.py --hidden-import pywin32 --hidden-import plyer.platforms.win.notification --uac-admin
 app = Flask(__name__)
 # Load in SHA256 signatures
 PATH = "./rules/sha256_db.txt"
@@ -18,7 +18,9 @@ for i in range(len(temp)):
 print("Signatures loaded!")
 
 # compile yara rulesets
-BASE_PATH = app.root_path
+# BASE_PATH = app.root_path
+BASE_PATH = "./"
+# print(BASE_PATH)
 yaraRules = ""
 dummy = ""
 rule_count = 0
