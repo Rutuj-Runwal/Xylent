@@ -188,5 +188,58 @@ def scans():
     else:
         print("Invalid Scan Type")
 
+
+@app.route("/deviceStats", methods=['POST'])
+def deviceStats():
+    import shutil
+    from plyer import battery, devicename, wifi
+    print(battery.status)
+    if(wifi.is_enabled()):
+        print(wifi.is_connected())
+
+
+@app.route("/cleanJunk", methods=['POST'])
+def cleanJunk():
+    # Remove temp files older than 24hrs
+    import time
+    import shutil
+    localTempPath = R"${TEMP}"
+    windowsTempPath = "C:\Windows\Temp"
+    prefetchPath = "C:\Windows\Prefetch"
+
+    now = time.time()
+    root = [prefetchPath, os.path.expandvars(localTempPath), windowsTempPath]
+    temp_list = []
+    for target in root:
+        for content in os.listdir(target):
+            age = now-os.stat(os.path.join(target, content)).st_mtime
+            if age/3600 >= 24:
+                temp_list.append(os.path.join(target, content))
+
+    for file in temp_list:
+        try:
+            os.remove(file)
+        except:
+            try:
+                shutil.rmtree(file, ignore_errors=True)
+            except:
+                print("Already in use "+file)
+
+
+@app.route("/launchProgram", methods=['POST'])
+def launchProgram():
+    data = request.json
+    PROGRAM_PATH = data['programPath']
+    import subprocess
+    if(os.path.exists(PROGRAM_PATH)):
+        try:
+            subprocess.Popen(PROGRAM_PATH)
+            return "Done!"
+        except Exception as e:
+            print(e)
+            return str(e)
+    else:
+        return "Cannot open: " + PROGRAM_PATH
+    
 if __name__ == '__main__':
    app.run(debug=True)
