@@ -14,9 +14,15 @@
     "extraMetadata": {
       "main": "main.js"
     },
+    "extraFiles": [
+      "signature-base",
+      "rules",
+      "engine.exe"
+    ],
     "executableName": "RR AV",
     "win": {
-      "target": "portable"
+      "target": "portable",
+      "requestedExecutionLevel":"requireAdministrator"
     }
   },
   "scripts": {

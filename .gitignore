@@ -13,7 +13,7 @@ __pycache__/
 /build
 /dist
 /signature-base
-
+/uiDesignTemplates
 # misc
 .DS_Store
 .env.local

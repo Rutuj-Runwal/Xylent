@@ -5,7 +5,10 @@ import {
 
 
 function Sidebar() {
-  const styles = {
+
+  const menuOptions = {
+    Protection: { 'Virus Scans': { link: "/scanChooser", desc: "Run a Quick,Full or Custom Scan" }, "Advanced Scan": { link: 'NA', desc: 'Launch Microsoft MSRT tool to scan the system', programPath:"C:\\Windows\\System32\\MRT.exe"}},
+    Performance:{'Startup Monitor':{link:"/optimize",desc:"Manage Startup Items"},"Delete Junk Files":{link:"/deleteJunk",desc:"Remove Junk Files"}}
   }  
   return (
     <>
@@ -13,11 +16,13 @@ function Sidebar() {
         <div className="flex_row just_cent sideBar_Item">Status</div>
       </Link>
       <hr/>
-      <div className="flex_row just_cent sideBar_Item">Protection</div>
+      <Link to="/mainFrame" state={menuOptions.Protection} className='sideBar_Item_link' tabIndex="-1">
+        <div className="flex_row just_cent sideBar_Item">Protection</div>
+      </Link>
       <hr />
       <div className="flex_row just_cent sideBar_Item">Privacy</div>
       <hr />
-      <Link to="/optimize" className='sideBar_Item_link' tabIndex="-1">
+      <Link to="/mainFrame" className='sideBar_Item_link' state={menuOptions.Performance} tabIndex="-1">
         <div className="flex_row just_cent sideBar_Item">Performance</div>
       </Link>
       <hr />
