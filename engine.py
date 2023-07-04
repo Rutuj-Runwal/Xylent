@@ -188,7 +188,6 @@ def scans():
     else:
         print("Invalid Scan Type")
 
-
 @app.route("/deviceStats", methods=['POST'])
 def deviceStats():
     import shutil
@@ -225,7 +224,32 @@ def cleanJunk():
             except:
                 print("Already in use "+file)
 
+@app.route('/addFirewallRules',methods=['POST'])
+def addFirewallRules():
+    import requests
+    import subprocess
+    data = request.json
+    print(data)
+    response = requests.get(data['link']).text
+    ips = response.split("\n")
+    rule = "netsh advfirewall firewall delete rule name='XYLENT_AV_IP_RULE"
+    subprocess.run(['Powershell','-Command',rule])
 
+    for ip in ips:
+        if ip and ip[0]!='!' and "#" not in ip:
+            rule = "netsh advfirewall firewall add rule name='XYLENT_AV_IP_RULE' Dir=Out Action=Block RemoteIP="+ip.rstrip()
+            print(rule)
+            subprocess.run(['Powershell', '-Command', rule])
+            
+@app.route('/executeCommand',methods=['POST'])
+def executeCommand():
+    import subprocess
+    data = request.json
+    program = data['commandData']["program"]
+    command = data['commandData']["command"]
+    subprocess.run([program,'-Command',command])
+    return "Done"
+    
 @app.route("/launchProgram", methods=['POST'])
 def launchProgram():
     data = request.json
