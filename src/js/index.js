@@ -10,6 +10,7 @@ import Sidebar from './Sidebar';
 import StartupOptimizer from './StartupOptimizer';
 import ScannerInterface from './ScannerInterface';
 import MainFrame from './MainFrame';
+import Options from './Options';
 window.React = React;
 
 // const router = createHashRouter(
@@ -40,6 +41,7 @@ root.render(
                 <Route path="/mainFrame" element={<MainFrame />} />
                 <Route path='/optimize' element={<StartupOptimizer />}></Route>
                 <Route path='/scanUI' element={<ScannerInterface />}></Route>
+                <Route path='/options' element={<Options/>}></Route>
             </Routes>
         </div>
     </HashRouter>

@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { shell } from "electron";
 
 function MainFrame() {
     let { state } = useLocation();
@@ -12,6 +13,18 @@ function MainFrame() {
             var data = await fetch('http://127.0.0.1:5000/launchProgram', requestOptions)
             var parsed = await data.text()
             console.log(parsed);
+        }else if(state[key].commandData){
+            const requestOptions = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ commandData: state[key].commandData })
+            };
+            var data = await fetch('http://127.0.0.1:5000/executeCommand', requestOptions)
+            var parsed = await data.text()
+            console.log(parsed);
+        }else{
+            console.log(state[key].externlLink);
+            shell.openExternal(state[key].externalLink)
         }
     }
     return (
@@ -20,7 +33,7 @@ function MainFrame() {
                 return (
                     <div key={key} >
                         {state[key].link != "NA" ?
-                            <Link className='sideBar_Item_link statBox_height' to={state[key].link} tabIndex="-1">
+                            <Link className='sideBar_Item_link statBox_height' to={state[key].link} state={state[key].data} tabIndex="-1">
                                 <div className='statBox flex_col spc_btwn'>
                                     <div className='flex_row spc_btwn'>
                                         <div>{key}</div>
