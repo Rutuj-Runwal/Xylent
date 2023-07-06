@@ -22,7 +22,7 @@
     "executableName": "RR AV",
     "win": {
       "target": "portable",
-      "requestedExecutionLevel":"requireAdministrator"
+      "requestedExecutionLevel": "requireAdministrator"
     }
   },
   "scripts": {

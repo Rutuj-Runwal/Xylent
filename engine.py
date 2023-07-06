@@ -1,6 +1,6 @@
 import os
 import yara
-from flask import request,Flask
+from flask import request,Flask,Response
 from scanner import Scanner
 from systemWatcher import systemWatcher
 import threading
@@ -197,7 +197,38 @@ def deviceStats():
         print(wifi.is_connected())
 
 
-@app.route("/cleanJunk", methods=['POST'])
+def addFirewallRules(url):
+    import requests
+    import subprocess
+    import ipaddress
+
+    response = requests.get(url).text
+    ips = response.split("\n")
+    rule = "netsh advfirewall firewall delete rule name='XYLENT_AV_IP_RULE'"
+    subprocess.run(['Powershell', '-Command', rule])
+
+    for ip in ips:
+        if ip and ip[0] != '!' and "#" not in ip:
+            try:
+                ip_object = ipaddress.ip_address(ip)
+                rule = "netsh advfirewall firewall add rule name='XYLENT_AV_IP_RULE' Dir=Out Action=Block RemoteIP="+ip.rstrip()
+                # print(rule)
+                process = subprocess.run(
+                    ['Powershell', '-Command', rule], stdout=subprocess.PIPE, encoding='utf-8')
+                realtime_output = process.stdout
+                if realtime_output == '' and process.poll() is not None:
+                    break
+                if realtime_output:
+                    yield f'data: {ip+" "+realtime_output.strip()} \n\n'
+            except Exception as e:
+                yield f'data: {e} \n\n'
+
+def SSEstream(funcToStream, url=None):
+    if(url):
+        return Response(funcToStream(url), mimetype='text/event-stream')
+    else:
+        return Response(funcToStream(), mimetype='text/event-stream')
+
 def cleanJunk():
     # Remove temp files older than 24hrs
     import time
@@ -205,15 +236,20 @@ def cleanJunk():
     localTempPath = R"${TEMP}"
     windowsTempPath = "C:\Windows\Temp"
     prefetchPath = "C:\Windows\Prefetch"
-
     now = time.time()
+    size = 0
     root = [prefetchPath, os.path.expandvars(localTempPath), windowsTempPath]
     temp_list = []
     for target in root:
-        for content in os.listdir(target):
-            age = now-os.stat(os.path.join(target, content)).st_mtime
-            if age/3600 >= 24:
-                temp_list.append(os.path.join(target, content))
+        try:
+            for content in os.listdir(target):
+                age = now-os.stat(os.path.join(target, content)).st_mtime
+                if age/3600 >= 24:
+                    size = os.stat(os.path.join(target, content)).st_size
+                    temp_list.append(os.path.join(target, content))
+                    yield f'data: {"Removing File: "+ os.path.join(target,content)+ " Size: "+str(size)} \n\n'
+        except PermissionError:
+            print(target)
 
     for file in temp_list:
         try:
@@ -224,22 +260,14 @@ def cleanJunk():
             except:
                 print("Already in use "+file)
 
-@app.route('/addFirewallRules',methods=['POST'])
-def addFirewallRules():
-    import requests
-    import subprocess
-    data = request.json
-    print(data)
-    response = requests.get(data['link']).text
-    ips = response.split("\n")
-    rule = "netsh advfirewall firewall delete rule name='XYLENT_AV_IP_RULE"
-    subprocess.run(['Powershell','-Command',rule])
+@app.route("/cleanJunk", methods=['POST'])
+def streamTemCleaningtoFrontend():
+    return SSEstream(cleanJunk)
 
-    for ip in ips:
-        if ip and ip[0]!='!' and "#" not in ip:
-            rule = "netsh advfirewall firewall add rule name='XYLENT_AV_IP_RULE' Dir=Out Action=Block RemoteIP="+ip.rstrip()
-            print(rule)
-            subprocess.run(['Powershell', '-Command', rule])
+@app.route('/addFirewallRules',methods=['GET','POST'])
+def streamFirewallRulestoFrontend():
+    data = request.json
+    return SSEstream(addFirewallRules,data['link'])
             
 @app.route('/executeCommand',methods=['POST'])
 def executeCommand():

@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
 import { shell } from "electron";
-
 function MainFrame() {
     let { state } = useLocation();
     var launchProgram = async (key) => {
@@ -33,7 +32,7 @@ function MainFrame() {
                 return (
                     <div key={key} >
                         {state[key].link != "NA" ?
-                            <Link className='sideBar_Item_link statBox_height' to={state[key].link} state={state[key].data} tabIndex="-1">
+                            <Link className='sideBar_Item_link statBox_height' to={state[key].link} state={state[key].data? state[key].data : state[key]} tabIndex="-1">
                                 <div className='statBox flex_col spc_btwn'>
                                     <div className='flex_row spc_btwn'>
                                         <div>{key}</div>
