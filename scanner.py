@@ -60,20 +60,26 @@ class Scanner:
                         notif_str = "Xylent taking action against detected malware "+ path
                         suspScore+=100
                         detectionSpace = "SignatureBased: " + self.__signatures[hash]
-            # YARA RULES DETECTION
-            if suspScore==0:
-                try:
-                    matches = self.peid_rules.match(path)
-                    if matches:
-                        suspScore+=40
-                        print(matches)
-                        notif_str = "Xylent is taking action against detected malware "+ path
-                        detectionSpace += " Yara: "+"YaraBasedEntity"
-                        # return "aeicar!"
-                except Exception:
-                    print('packer exception')
+                # YARA RULES DETECTION
+                if suspScore==0:
+                    try:
+                        matches = self.peid_rules.match(path)
+                        if matches:
+                            for match in matches:
+                                if 'score' in match.meta:
+                                    suspScore += int(match.meta['score'])
+                                else:
+                                    # ⚠ Better scoring mechanism needed, if no score is provided ⚠
+                                    suspScore+=20
+                                print("YARA: "+str(match))
+                                notif_str = "Xylent is taking action against detected malware "+ path
+                                detectionSpace += " Yara: "+ str(match)
+                            # return "aeicar!"
+                    except Exception as e:
+                        print(e)
 
-            if suspScore >= 40:
+
+            if suspScore >= 70:
                 from plyer import notification
                 notification.notify(
                     title="Malware Detected",
