@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 function Status() {
   const [skippedFilesCount, setskippedFilesCount] = useState(0);
@@ -19,47 +19,45 @@ function Status() {
   //   });
   // }
   return (
-        <div id="content">
-          <div id="homeContent">
-            <h3 style={{"textAlign":'center'}}>Welcome to Xylent Antivirus!</h3>
-            <div className="flex_row just_cent">
-              <div>
-                  <div className="circle">
-                    <div className="checkMark"></div>
-                  </div>
-              </div>
-              <div className='flex_col just_cent'>
-                  <p style={{ 'fontSize': '30px' }}>&nbsp;&nbsp;&nbsp;System is Secure</p>
-                  <button onClick={routeChange} id="homeScanNow_Btn">Scan Now</button>
-              </div>
-            </div>
-            <br />
-            <div className='flex_row'>
-              <div className='statBox flex_col'>
-                <div className='statBox_head flex_row spc_btwn'>
-                  <div>{skippedFilesCount}</div>
-                  <div>Placeholder</div>
-                </div>
-                <div>Malware/Viruses</div>
-              </div>
-              <div className='statBox flex_col'>
-                <div className='statBox_head flex_row spc_btwn'>
-                  <div>{skippedFilesCount}</div>
-                  <div>Placeholder</div>
-                </div>
-                <div>Malware/Viruses</div>
-              </div>
-              <div className='statBox flex_col'>
-                <div className='statBox_head flex_row spc_btwn'>
-                  <div>{skippedFilesCount}</div>
-                  <div>Placeholder</div>
-                </div>
-                <div>Malware/Viruses</div>
-              </div>
-            </div>
-            {/* <h2 id="nowScanning">{currScan}</h2> */}
+    <div id="homeContent">
+      <h3 style={{ "textAlign": 'center' }}>Welcome to Xylent Antivirus!</h3>
+      <div className="flex_row just_cent">
+        <div>
+          <div className="circle">
+            <div className="checkMark"></div>
           </div>
         </div>
+        <div className='flex_col just_cent'>
+          <p style={{ 'fontSize': '30px' }}>&nbsp;&nbsp;&nbsp;System is Secure</p>
+          <button onClick={routeChange} id="homeScanNow_Btn">Scan Now</button>
+        </div>
+      </div>
+      <br />
+      <div className='flex_row'>
+        <div className='statBox flex_col'>
+          <div className='statBox_head flex_row spc_btwn'>
+            <div>{skippedFilesCount}</div>
+            <div>Placeholder</div>
+          </div>
+          <div>Malware/Viruses</div>
+        </div>
+        <div className='statBox flex_col'>
+          <div className='statBox_head flex_row spc_btwn'>
+            <div>{skippedFilesCount}</div>
+            <div>Placeholder</div>
+          </div>
+          <div>Malware/Viruses</div>
+        </div>
+        <div className='statBox flex_col'>
+          <div className='statBox_head flex_row spc_btwn'>
+            <div>{skippedFilesCount}</div>
+            <div>Placeholder</div>
+          </div>
+          <div>Malware/Viruses</div>
+        </div>
+      </div>
+      {/* <h2 id="nowScanning">{currScan}</h2> */}
+    </div>
   )
 }
 

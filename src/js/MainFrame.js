@@ -27,12 +27,12 @@ function MainFrame() {
         }
     }
     return (
-        <div id='content' className='flex_row spc_arnd'>
+        <div className='flex_row spc_arnd'>
             {Object.keys(state).map((key, index) => {
                 return (
                     <div key={key} >
                         {state[key].link != "NA" ?
-                            <Link className='sideBar_Item_link statBox_height' to={state[key].link} state={state[key].data? state[key].data : state[key]} tabIndex="-1">
+                            <Link className='sideBar_Item_link statBox_btn statBox_height' to={state[key].link} state={state[key].data? state[key].data : state[key]} tabIndex="-1">
                                 <div className='statBox flex_col spc_btwn'>
                                     <div className='flex_row spc_btwn'>
                                         <div>{key}</div>

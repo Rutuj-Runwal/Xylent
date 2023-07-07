@@ -27,8 +27,10 @@ function SSERenderer() {
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
-            console.log('Received', value);
-            setData(value)
+            setTimeout(() => {
+              console.log('Received', value);
+              setData(value)
+            }, 1000);
         }
         // TODO: Add a modal UI for confirmartion
     }
@@ -38,6 +40,7 @@ function SSERenderer() {
     
   return (
     <div>
+        <br/>
         {data}
     </div>
   )

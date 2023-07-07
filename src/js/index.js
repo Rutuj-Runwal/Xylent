@@ -36,15 +36,17 @@ root.render(
             <div id="sideBar">
                 <Sidebar />
             </div>
-            <Routes>
-                <Route path='/' element={<Status />} />
-                <Route path='/status' element={<Status />} />
-                <Route path="/mainFrame" element={<MainFrame />} />
-                <Route path='/optimize' element={<StartupOptimizer />}></Route>
-                <Route path='/scanUI' element={<ScannerInterface />}></Route>
-                <Route path='/options' element={<Options/>}></Route>
-                <Route path='/sserenderer' element={<SSERenderer />}></Route>
-            </Routes>
+            <div id='content'>
+                <Routes>
+                    <Route path='/' element={<Status />} />
+                    <Route path='/status' element={<Status />} />
+                    <Route path="/mainFrame" element={<MainFrame />} />
+                    <Route path='/optimize' element={<StartupOptimizer />}></Route>
+                    <Route path='/scanUI' element={<ScannerInterface />}></Route>
+                    <Route path='/options' element={<Options/>}></Route>
+                    <Route path='/sserenderer' element={<SSERenderer />}></Route>
+                </Routes>
+            </div>
         </div>
     </HashRouter>
 </>);
