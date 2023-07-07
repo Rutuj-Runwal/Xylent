@@ -201,27 +201,29 @@ def addFirewallRules(url):
     import requests
     import subprocess
     import ipaddress
+    try:
+        response = requests.get(url).text
+        ips = response.split("\n")
+        rule = "netsh advfirewall firewall delete rule name='XYLENT_AV_IP_RULE'"
+        subprocess.run(['Powershell', '-Command', rule])
 
-    response = requests.get(url).text
-    ips = response.split("\n")
-    rule = "netsh advfirewall firewall delete rule name='XYLENT_AV_IP_RULE'"
-    subprocess.run(['Powershell', '-Command', rule])
-
-    for ip in ips:
-        if ip and ip[0] != '!' and "#" not in ip:
-            try:
-                ip_object = ipaddress.ip_address(ip)
-                rule = "netsh advfirewall firewall add rule name='XYLENT_AV_IP_RULE' Dir=Out Action=Block RemoteIP="+ip.rstrip()
-                # print(rule)
-                process = subprocess.run(
-                    ['Powershell', '-Command', rule], stdout=subprocess.PIPE, encoding='utf-8')
-                realtime_output = process.stdout
-                if realtime_output == '' and process.poll() is not None:
-                    break
-                if realtime_output:
-                    yield f'data: {ip+" "+realtime_output.strip()} \n\n'
-            except Exception as e:
-                yield f'data: {e} \n\n'
+        for ip in ips:
+            if ip and ip[0] != '!' and "#" not in ip:
+                try:
+                    ip_object = ipaddress.ip_address(ip)
+                    rule = "netsh advfirewall firewall add rule name='XYLENT_AV_IP_RULE' Dir=Out Action=Block RemoteIP="+ip.rstrip()
+                    # print(rule)
+                    process = subprocess.run(
+                        ['Powershell', '-Command', rule], stdout=subprocess.PIPE, encoding='utf-8')
+                    realtime_output = process.stdout
+                    if realtime_output == '' and process.poll() is not None:
+                        break
+                    if realtime_output:
+                        yield f'data: {ip+" "+realtime_output.strip()} \n\n'
+                except Exception as e:
+                    yield f'data: {e} \n\n'
+    except requests.exceptions.RequestException as e:
+        yield f'data: Network Down! \n\n'
 
 def SSEstream(funcToStream, url=None):
     if(url):
