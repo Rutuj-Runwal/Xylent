@@ -40,5 +40,5 @@ class Quarantine:
             
             # TODO: fix PermissionError by getting admin elevated access
             # os.replace(self.file, fileToMove)
-            shutil.move(file,fileToMove)
+            shutil.move(str(file),str(fileToMove))
             
