@@ -32,15 +32,15 @@ function StartupOptimizer() {
   useEffect(()=>{fetchStartUPItms()}, []);
   
   return (
-    <div style={{ 'display': 'flex', 'flexDirection': 'column' }}>
+    <table style={{ 'display': 'flex', 'flexDirection': 'column','tableLayout':'fixed'}}>
       {
         startupData.map((val) => {
           console.log(val);
-          return (<div style={{ 'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'normal' }}><p key={val[0]}>{val[0]}</p>{val[1] === false ? <button id={val[0]} onClick={(e) => toggle(e.target.id, "on")}>Enable</button> : <button id={val[0]} onClick={(e) => toggle(e.target.id,"off")}>Disable</button>}</div>)
+          return (<tr style={{ 'display': 'flex', 'flexDirection': 'row','justifyContent': 'space-between','alignContent':'space-between'}}><td style={{"width":"150px"}} key={val[0]}>{val[0]}</td><td>Safe/Unsafe</td><td>{val[1] === false ? <button id={val[0]} onClick={(e) => toggle(e.target.id, "on")}>Enable</button> : <button id={val[0]} onClick={(e) => toggle(e.target.id, "off")}>Disable</button>}</td></tr>)
         
         })
       }
-    </div>
+    </table>
   )
 }
 
