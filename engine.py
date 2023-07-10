@@ -2,6 +2,7 @@ import os
 import yara
 from flask import request,Flask,Response
 from scanner import Scanner
+from suspiciousWPDetector import SuspiciousWPDetector
 from systemWatcher import systemWatcher
 import threading
 # Compile to executable with: pyinstaller -F engine.py --hidden-import pywin32 --hidden-import plyer.platforms.win.notification --uac-admin
@@ -115,6 +116,8 @@ def startupItems():
         # print(processes)
         pName = ''
         enable = ''
+        score = 0
+        detect = SuspiciousWPDetector()
         for name in processes:
             if not "REG_BINARY" in name and name[0]!='0':
                 pName+=name+' '
@@ -123,7 +126,8 @@ def startupItems():
                     enable = True
                 elif name[1]=='3':
                     enable = False
-        processName.append([pName,enable])
+                verdict = detect.classify(pName.rstrip())
+        processName.append([pName.rstrip(),enable,verdict])
     # print(processName)
     return processName
 
