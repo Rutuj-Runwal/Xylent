@@ -17,19 +17,19 @@ function Sidebar() {
   return (
     <>
       {!(location.pathname === "/status" || location.pathname === "/") ? <button className='sideBar_BackNav' onClick={() => navigate(-1)}>&#8592;</button> : <></>}
-      <Link to="/status" className='sideBar_Item_link' tabIndex="-1">
+      <Link to="/status" tabIndex="-1">
         <div className="flex_row just_cent sideBar_Item"><IconContext.Provider style={{ stroke: "black", strokeWidth: "1" }} value={{ color: "green" }}><IoCheckmarkCircleOutline size={45}/></IconContext.Provider></div>
       </Link>
       <hr/>
-      <Link to="/mainFrame" state={menuOptions.Protection} className='sideBar_Item_link' tabIndex="-1">
+      <Link to="/mainFrame" state={menuOptions.Protection} tabIndex="-1">
         <div className="flex_row just_cent sideBar_Item"><IconContext.Provider value={{ color: "green" }}><IoShieldCheckmarkOutline size={45} /></IconContext.Provider></div>
       </Link>
       <hr />
-      <Link to="/mainFrame" state={menuOptions.Privacy} className='sideBar_Item_link' tabIndex="-1">
+      <Link to="/mainFrame" state={menuOptions.Privacy} tabIndex="-1">
         <div className="flex_row just_cent sideBar_Item"><IconContext.Provider value={{ color: "green" }}><IoLockClosedOutline size={35} /></IconContext.Provider></div>
       </Link>
       <hr />
-      <Link to="/mainFrame" className='sideBar_Item_link' state={menuOptions.Performance} tabIndex="-1">
+      <Link to="/mainFrame"  state={menuOptions.Performance} tabIndex="-1">
         <div className="flex_row just_cent sideBar_Item"><IconContext.Provider value={{ color: "green" }}><IoAnalyticsOutline size={45} /></IconContext.Provider></div>
       </Link>
       <hr />

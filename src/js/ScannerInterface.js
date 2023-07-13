@@ -64,7 +64,7 @@ function ScannerInterface() {
     }, [])
 
     return (
-        <div id="content">
+        <div>
             <h3>Performing {state.scanType} Scan</h3>
             <i className="loading" style={{ display: 'none' }}></i>
             {currScan != "scanning animation done" ? currScan : 
