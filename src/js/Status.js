@@ -61,7 +61,7 @@ function Status() {
               </Link>
             </div>
             <div className='dashboard_tools_item flex_row just_cent' style={{ 'marginTop': '50px', 'marginRight': '40px' }}>
-              <Link>
+              <Link to="/optimize">
                 <span className='dashboard_tools_info'>Startup<br />Monitor</span>
                 <TbHeartRateMonitor className='dashboard_tools_icon' size="22"/>
               </Link>

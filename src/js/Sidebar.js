@@ -3,8 +3,8 @@ import {
   Link,useNavigate,useLocation
 } from "react-router-dom";
 import { IconContext } from "react-icons";
-import { MdOutlineGppGood } from "react-icons/md";
-import { IoCheckmarkCircleOutline, IoShieldCheckmarkOutline, IoAnalyticsOutline, IoLockClosedOutline, IoSettingsOutline } from "react-icons/io5"
+import { IoCheckmarkCircleOutline, IoShieldCheckmarkOutline, IoAnalyticsOutline, IoLockClosedOutline, IoSettingsOutline } from "react-icons/io5";
+import { LuSettings  } from "react-icons/lu";
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -17,6 +17,9 @@ function Sidebar() {
   return (
     <>
       {!(location.pathname === "/status" || location.pathname === "/") ? <button className='sideBar_BackNav' onClick={() => navigate(-1)}>&#8592;</button> : <></>}
+      <IconContext.Provider style={{strokeWidth:'10px !important',stroke:'green'}} value={{ color: "green" }}>
+        <LuSettings className='sideBar_setting_icon' size={23} />
+      </IconContext.Provider>
       <Link to="/status" tabIndex="-1">
         <div className="flex_row just_cent sideBar_Item"><IconContext.Provider style={{ stroke: "black", strokeWidth: "1" }} value={{ color: "green" }}><IoCheckmarkCircleOutline size={45}/></IconContext.Provider></div>
       </Link>
