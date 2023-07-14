@@ -1,7 +1,7 @@
 # Xylent
 A powerful antivirus built using Electron framework and python
 
-⚠ Work in Progress
+# ⚠ Work in Progress
 
 ### Added Features
 - Real Time System Watch
