@@ -182,6 +182,56 @@
       display: inline;
     }
 
+    /* Toggle */
+
+    .toggle input{
+      display: none;
+    }
+
+    .toggle {
+      display: inline-block;
+      width: 40px; 
+      height: 20px;
+      transform: translateY(50%);
+      position: relative;
+    }
+
+    .toggle_slider{
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-radius: 20px;
+      box-shadow: 0 0 0 2px #777, 0 0 4px #777;
+      cursor: pointer;
+      border: 4px solid transparent;
+      overflow: hidden;
+      transition: 0.2s;
+    }
+
+    .toggle_slider:before{
+      position: absolute;
+      content: "";
+      width: 100%;
+      height: 100%;
+      background-color: #777;
+      border-radius: 20px;
+      transform: translateX(-20px); /*translateX(-(w-h))*/
+      transition: 0.2s;
+    }
+
+    input:checked + .toggle_slider:before{
+      transform: translateX(20px); /*translateX(w-h)*/
+      background-color: #00ca21;
+    }
+
+    input:checked + .toggle_slider{
+      box-shadow: 0 0 0 2px #00ca21, 0 0 8px #00ca21;
+    }
+
+    /* Toggle */
+
     /* check mark */
     .circle {
       position: relative;

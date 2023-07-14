@@ -6,14 +6,10 @@ import { RxQuestionMarkCircled } from "react-icons/rx";
 function StartupOptimizer() {
   const [startupData, setStartupData] = useState([]);
   var toggle = (id,state) => {
-    var tg_to = false;
-    if(state==='on'){
-      tg_to = true;
-    }else{tg_to = false;}
     const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ toggleTo: tg_to , val:id})
+      body: JSON.stringify({ toggleTo: state, val: id })
     };
     fetch('http://127.0.0.1:5000/toggleItemsForStartup', requestOptions)
       .then(response => response.text())
@@ -44,8 +40,8 @@ function StartupOptimizer() {
           startupData.map((val) => {
             console.log(val);
             return (
-              <tr style={{ 'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between', 'alignItems': 'flex-end', 'margin': '2px' }}>
-                <td style={{ 'width': '200px', 'marginRight': '1px', 'padding': '0 !important','fontWeight':'500' }} key={val[0]}>
+              <tr style={{ 'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between', 'alignItems': 'center'}}>
+                <td style={{ 'width': '200px', 'padding': '0 !important','fontWeight':'500' }} key={val[0]}>
                   {val[0]}
                 </td>
                 <td>
@@ -54,12 +50,10 @@ function StartupOptimizer() {
                   </div>
                 </td>
                 <td>
-                  {
-                    val[1] === false ?
-                      <button className='itemStatusPill' id={val[0]} onClick={(e) => toggle(e.target.id, "on")}>Enable</button>
-                      :
-                      <button className='itemStatusPill' id={val[0]} onClick={(e) => toggle(e.target.id, "off")}>Disable</button>
-                  }
+                    <label className="toggle">
+                      <input type="checkbox" id={val[0]} defaultChecked={val[1]} onChange={(e) => toggle(e.target.id,e.target.checked)}/>
+                        <span className="toggle_slider"></span>
+                    </label>
                 </td>
               </tr>
             )
