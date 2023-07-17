@@ -13,6 +13,7 @@ import MainFrame from './MainFrame';
 import Options from './Options';
 import SSERenderer from './SSERenderer';
 import XylentUndef from './XylentUndef';
+import QuarantineHandler from './QuarantineHandler';
 window.React = React;
 
 // const router = createHashRouter(
@@ -46,6 +47,7 @@ root.render(
                     <Route path='/scanUI' element={<ScannerInterface />}></Route>
                     <Route path='/options' element={<Options/>}></Route>
                     <Route path='/sserenderer' element={<SSERenderer />}></Route>
+                    <Route path='/manageQuars' element={<QuarantineHandler/>}></Route>
                     <Route path='*' element={<XylentUndef/>}></Route>
                 </Routes>
             </div>

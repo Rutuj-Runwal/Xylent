@@ -22,12 +22,19 @@ class Scanner:
 
     def __init__(self,signatures,rootPath):
         self.__signatures = signatures
-        # self.__rootPath = rootPath
-        self.__rootPath = "./"
+        self.__rootPath = rootPath
+        self.quarantineData = {
+            'configFileName':'quar_info',
+            'configFilePath':rootPath+'/config/',
+            'defaults':{
+                'quarData':[]
+            }
+        }
+        # self.__rootPath = "./"
         print(rootPath)
         self.peid_rules = yara.load(self.__rootPath+"\compiledRules")
         print("-----Scanner Initialized-----")
-        self.quar = Quarantine()
+        self.quar = Quarantine(self.quarantineData)
 
     def getFileHash(self,path):
         hash = ""
@@ -87,7 +94,7 @@ class Scanner:
                     # displaying time
                     timeout=2
                 )
-                self.quar.quarantine(path)
+                self.quar.quarantine(path,detectionSpace)
 
             return detectionSpace
             # TODO: if file is packed: additional detection

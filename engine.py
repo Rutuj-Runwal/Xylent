@@ -19,64 +19,72 @@ for i in range(len(temp)):
 print("Signatures loaded!")
 
 # compile yara rulesets
-# BASE_PATH = app.root_path
-BASE_PATH = "./"
-# print(BASE_PATH)
-yaraRules = ""
-dummy = ""
-rule_count = 0
-# for yara_rule_directory in self.yara_rule_directories:
-yara_rule_directory = os.path.join(BASE_PATH, "signature-base/yara".replace("/", os.sep))
-if not os.path.exists(yara_rule_directory):
-    print("Cannot find signature base")
-if not os.path.exists(BASE_PATH+'/compiledRules'):
-    for root, directories, files in os.walk(yara_rule_directory, followlinks=False):
-        for file in files:
-            try:
-                # Full Path
-                yaraRuleFile = os.path.join(root, file)
 
-                # Skip hidden, backup or system related files
-                if file.startswith(".") or file.startswith("~") or file.startswith("_"):
-                    continue
+@app.route('/compileYaraSigs',methods=['GET'])
+def compileYaraSigs():
+    BASE_PATH = app.root_path
+    print(BASE_PATH)
+    yaraRules = ""
+    dummy = ""
+    rule_count = 0
+    # for yara_rule_directory in self.yara_rule_directories:
+    yara_rule_directory = os.path.join(
+        BASE_PATH, "signature-base/yara".replace("/", os.sep))
+    if not os.path.exists(yara_rule_directory):
+        print("Cannot find signature base")
+    if not os.path.exists(BASE_PATH+'/compiledRules'):
+        for root, directories, files in os.walk(yara_rule_directory, followlinks=False):
+            for file in files:
+                try:
+                    # Full Path
+                    yaraRuleFile = os.path.join(root, file)
 
-                # Extension
-                extension = os.path.splitext(file)[1].lower()
+                    # Skip hidden, backup or system related files
+                    if file.startswith(".") or file.startswith("~") or file.startswith("_"):
+                        continue
 
-                # Skip all files that don't have *.yar or *.yara extensions
-                if extension != ".yar" and extension != ".yara":
-                    continue
+                    # Extension
+                    extension = os.path.splitext(file)[1].lower()
 
-                with open(yaraRuleFile, 'r') as yfile:
-                    yara_rule_data = yfile.read()
+                    # Skip all files that don't have *.yar or *.yara extensions
+                    if extension != ".yar" and extension != ".yara":
+                        continue
 
-                # Add the rule
-                rule_count = rule_count+1
-                yaraRules += yara_rule_data
+                    with open(yaraRuleFile, 'r') as yfile:
+                        yara_rule_data = yfile.read()
 
-            except Exception as e:
-                print("Error reading signature file %s ERROR: %s" %
+                    # Add the rule
+                    rule_count = rule_count+1
+                    yaraRules += yara_rule_data
+
+                except Exception as e:
+                    print("Error reading signature file %s ERROR: %s" %
                         (yaraRuleFile, sys.exc_info()[1]))
-    try:
-        compiledRules = yara.compile(source=yaraRules, externals={
-            'filename': dummy,
-            'filepath': dummy,
-            'extension': dummy,
-            'filetype': dummy,
-            'md5': dummy,
-            'owner': dummy,
-        })
-        compiledRules.save(BASE_PATH+"/compiledRules")
-        print("Initialized %d Yara rules" % rule_count)
-    except Exception as e:
-        print("Error during YARA rule compilation ERROR: - please fix the issue in the rule set")
-XylentScanner = Scanner(signatures=signaturesData,rootPath=app.root_path)
-def startSystemWatcher():
-    systemWatcher(XylentScanner)
+        try:
+            compiledRules = yara.compile(source=yaraRules, externals={
+                'filename': dummy,
+                'filepath': dummy,
+                'extension': dummy,
+                'filetype': dummy,
+                'md5': dummy,
+                'owner': dummy,
+            })
+            compiledRules.save(BASE_PATH+"/compiledRules")
+            print("Initialized %d Yara rules" % rule_count)
+            return "Initialized" + rule_count +" Yara rules"
+        except Exception as e:
+            return "Error during YARA rule compilation ERROR: - please fix the issue in the rule set"
+
+XylentScanner = Scanner(signatures=signaturesData, rootPath=app.root_path)
 
 
+def startSystemWatcher(thread_resume):
+    thread_resume.set()
+    systemWatcher(XylentScanner,thread_resume)
+
+thread_resume = threading.Event()
 realTime_thread = threading.Thread(
-    target=startSystemWatcher, daemon=True)
+    target=startSystemWatcher,args=(thread_resume,))
 realTime_thread.start()
 
 @app.route("/getActiveProcesses",methods=['GET'])
@@ -135,7 +143,6 @@ def startupItems():
 def getUsername():
     import getpass.getuser as getuser
     return getuser()
-
 
 @app.route("/toggleItemsForStartup", methods=['POST'])
 def toggleStartupItems():
@@ -200,6 +207,16 @@ def deviceStats():
     if(wifi.is_enabled()):
         print(wifi.is_connected())
 
+@app.route("/restoreFile",methods=['POST'])
+def restoreFile():
+    data = request.json
+    originalPath = data["originalPath"]
+    # Pause RTP thread to restore file
+    thread_resume.clear()
+    XylentScanner.quar.restore(originalPath)
+    # Start RTP thread after restore complete
+    thread_resume.set()
+    return "Done"
 
 def addFirewallRules(url):
     import requests

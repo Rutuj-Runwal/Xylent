@@ -27,12 +27,12 @@ function MainFrame() {
         }
     }
     return (
-        <div className='flex_row spc_arnd'>
+        <div className='grid' style={{gridTemplateColumns:'200px 200px 200px'}}>
             {Object.keys(state).map((key, index) => {
                 return (
-                    <div key={key} >
+                    <div key={key} className='statBox_btn statBox_height'>
                         {state[key].link != "NA" ?
-                            <Link className='statBox_btn statBox_height' to={state[key].link} state={state[key].data? state[key].data : state[key]} tabIndex="-1">
+                            <Link to={state[key].link} state={state[key].data? state[key].data : state[key]} tabIndex="-1">
                                 <div className='statBox flex_col spc_btwn'>
                                     <div className='flex_row spc_btwn'>
                                         <div>{key}</div>
@@ -41,7 +41,7 @@ function MainFrame() {
                                 </div>
                             </Link>
                             :
-                            <button className='statBox_btn statBox_height'onClick={() =>launchProgram(key)} tabIndex='-1'>
+                            <button style={{padding:'0px!important',margin:'0px !important',backgroundColor:'inherit'}} onClick={() =>launchProgram(key)} tabIndex='-1'>
                                 <div className='statBox flex_col spc_btwn'>
                                     <div className='flex_row spc_btwn'>
                                         <div>{key}</div>

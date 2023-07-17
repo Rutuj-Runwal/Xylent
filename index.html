@@ -11,13 +11,18 @@
     body {
       margin: 0px !important;
       -webkit-app-region: drag;
-      overflow-y:hidden;
+      
     }
 
     /* GLOBAL */
     a{
       text-decoration: none !important;
       color: inherit;
+    }
+    button{
+      cursor: pointer;
+      outline: none;
+      border:none;
     }
     .flex_row {
       display: flex;
@@ -41,6 +46,11 @@
       display: flex;
       flex-direction: column;
     }
+    .grid{
+      display: grid;
+      column-gap: 15px;
+      row-gap: 30px;
+    }
 
     .statBox {
       border: 1px solid grey;
@@ -52,15 +62,11 @@
       font-size: 15px;
     }
     .statBox_height{
-      height: 60px;;
+      height: 60px;
     }
 
     .statBox_btn{
-      outline: none;
-      border: none;
       background-color: white;
-      display: block;
-      cursor: pointer;
     }
 
     .smallFnt{
@@ -102,8 +108,6 @@
       position: absolute;
       margin-left: 105px;
       margin-top: 10px;
-      border: none;
-      outline: none;
       border-radius: 50%;
       width: 25px;
       height: 25px;
@@ -126,10 +130,8 @@
       border-radius: 20px;
       width: 150px;
       height: 35px;
-      border: none;
       background-color: #00B01D;
       color: white;
-      cursor: pointer;
       padding: 5px;
       font-size: 17px;
     }

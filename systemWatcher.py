@@ -1,21 +1,21 @@
 import os
 import win32file
 import win32con
-
-
-def systemWatcher(XylentScanner):
-  path_to_watch = "C:\\"
-  hDir = win32file.CreateFile(
-      path_to_watch,
-      1,
-      win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,
-      None,
-      win32con.OPEN_EXISTING,
-      win32con.FILE_FLAG_BACKUP_SEMANTICS,
-      None
-  )
-
-  while 1:
+from quarantineThreats import Quarantine
+import time
+quar = Quarantine()
+def systemWatcher(XylentScanner,thread_resume):
+  while thread_resume.is_set():
+    path_to_watch = "C:\\"
+    hDir = win32file.CreateFile(
+        path_to_watch,
+        1,
+        win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,
+        None,
+        win32con.OPEN_EXISTING,
+        win32con.FILE_FLAG_BACKUP_SEMANTICS,
+        None
+    )
     results = win32file.ReadDirectoryChangesW(
         hDir,
         1024,
@@ -29,13 +29,11 @@ def systemWatcher(XylentScanner):
         None,
         None
     )
-
-
+    
     for action, file in results:
       pathToScan = os.path.join(path_to_watch, file)
-
+      print(pathToScan)
       if "C:\\Windows\\Prefetch\\" in pathToScan:
-
         pathToScan = ""
       elif "C:\\Windows\\Temp" in pathToScan:
         pathToScan = ""
@@ -51,20 +49,12 @@ def systemWatcher(XylentScanner):
         pathToScan = ""
       elif "C:\\Windows\\bootstat.dat" in pathToScan:
         pathToScan = ""
+      elif quar.QuarantineDir in pathToScan:
+        pathToScan = ""
       try:
           if pathToScan:
             XylentScanner.scanFile(pathToScan)
       except:
         print(str(action)+" "+file+" ")
-        
-      
 
-    # with open("real-time_switch.blink", 'r') as blinkswitch:
-    #   switch = blinkswitch.read()
-    #   blinkswitch.close()
-
-    # if switch == "0" or switch == None or switch == "":
-    #   exit()
-
-
-# systemWatcher()
+  print("RTP waiting to start...")
