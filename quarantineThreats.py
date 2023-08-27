@@ -47,10 +47,41 @@ class Quarantine:
             # os.replace(self.file, fileToMove)
             self.store.setVal(str(file),detectionSpace)
             shutil.move(str(file),str(fileToMove))   
-            print("DONE IN QUARS!!!")      
+            print("DONE IN QUARS!!!")   
+
+    def quarantineFilesInArchive(self, originalZipPath, preserveArchiveContent):
+        # originalZipPath = self.store.getVal('ZipPath')
+        print("Original Zip Path: "+str(originalZipPath))
+        fileName = originalZipPath.split("\\")[-1]
+        # print("Name of file:"+str(fileName))
+        tempZipPath = "./scanExtracts"
+        if preserveArchiveContent:
+            # STABLE BUT SLOW - COPIES/REPLACES FILES
+            '''In order to preserve files in archive, only malicious file(s) from the archive is removed'''
+            # Other contents deemed safe are re-zipped at a temp location where the file was unzipped
+            # Finally, we replace the file at that location
+            shutil.make_archive(fileName.split(".")[0], fileName.split(".")[
+                                1], root_dir=tempZipPath)
+            # Replace the repaired archive in the original path
+            # filename without the extension of file is needed
+            # fileextension assumed to be format
+            shutil.move("./"+fileName, str(originalZipPath))
+            shutil.rmtree(tempZipPath)
+            print("Preserved!")
+        else:
+            '''Do not preserve and quarantine the entire zip file'''
+            self.quarantine(originalZipPath, "HARMFUL ZIP FILE")
+            print("Not Preserved!")
 
     def restore(self,originalPath):
         fileName = originalPath.split("\\")[-1]
         quarPath = os.path.join(self.QuarantineDir,fileName)
         self.store.removeVal(originalPath)
         shutil.move(quarPath,originalPath)
+    
+    def remove(self,originalPath):
+        fileName = originalPath.split("\\")[-1]
+        quarPath = os.path.join(self.QuarantineDir, fileName)
+
+        if os.path.exists(quarPath):
+            os.remove(quarPath)

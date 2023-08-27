@@ -15,6 +15,7 @@ __pycache__/
 /signature-base
 /uiDesignTemplates
 /config
+/scanExtracts
 # misc
 .DS_Store
 .env.local

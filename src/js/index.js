@@ -42,7 +42,7 @@ root.render(
                 <Routes>
                     <Route path='/' element={<Status />} />
                     <Route path='/status' element={<Status />} />
-                    <Route path="/mainFrame" element={<MainFrame />} />
+                    <Route path="/mainFrame/:type" element={<MainFrame />} />
                     <Route path='/optimize' element={<StartupOptimizer />}></Route>
                     <Route path='/scanUI' element={<ScannerInterface />}></Route>
                     <Route path='/options' element={<Options/>}></Route>

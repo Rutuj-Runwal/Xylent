@@ -15,6 +15,18 @@ function QuarantineHandler() {
             .then(data => console.log(data))
             .then(() => window.location.reload());
     }
+    var removeQuar = () => {
+        console.log("Deleting: " + id);
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ originalPath: id })
+        };
+        fetch('http://127.0.0.1:5000/removeFile', requestOptions)
+            .then(response => response.text())
+            .then(data => console.log(data))
+            .then(() => window.location.reload());
+    }
     useEffect(() => {
         ipcRenderer.send('xylent-get-path', "XYLENT_GET_APP_PATH");
         ipcRenderer.once('xylent-get-path', (event, basePath) => {
@@ -30,7 +42,7 @@ function QuarantineHandler() {
             setquarantineData(getData());
         })
         
-    }, [])
+    }, []);
     
     return (
         <table>
@@ -42,12 +54,16 @@ function QuarantineHandler() {
                         <tr key={val}>
                             <td>{val}</td>
                             <td>{quarantineData[val]}</td>
-                            <td><button id={val} onClick={(e) => restoreQuar(e.target.id)}>Restore</button></td>
+                            <td><button id={val} className='itemStatusPill' style={{ 'backgroundColor':"lightgrey" }} onClick={(e) => restoreQuar(e.target.id)}>Restore</button></td>
+                            <td><button id={val} className='itemStatusPill' style={{ 'backgroundColor':'lightblue'}} onClick={(e) => removeQuar(e.target.id)}>Delete</button></td>
                         </tr>
                     )
                 })
                 :
-                <h4>No items in quarantined!</h4>
+                <tr>
+                    <td><h4>No items in quarantined!</h4></td>
+                </tr>
+                
             }
             </tbody>
         </table>

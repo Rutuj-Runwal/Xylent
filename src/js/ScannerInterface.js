@@ -3,14 +3,13 @@ import { useLocation } from "react-router-dom";
 
 function ScannerInterface() {
     const [scanReport, setscanReport] = useState([]);
-    const [currScan, setcurrScan] = useState('Scanning')
+    const [currScan, setcurrScan] = useState('Scanning');
+    const [detectedFiles,setdetectedFiles] = useState([]);
     const [skippedFilesCount, setskippedFilesCount] = useState(0);
-    const [unsafeFilesCount, setunsafeFilesCount] = useState(0);
     const { state } = useLocation();
     var runScan = async () => {
         // Reset counters
         setskippedFilesCount(0);
-        setunsafeFilesCount(0);
         if (document.getElementById("scanStats")) {
             document.getElementById("scanStats").style.display = "none";
         }
@@ -32,6 +31,18 @@ function ScannerInterface() {
         console.log(dataJ);
         return dataJ;
     }
+    var setQuar = (id,detection) => {
+        console.log("Contained threat: " + id)
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ originalPath: id,detectionSpace:detection})
+        };
+        fetch('http://127.0.0.1:5000/quarFile', requestOptions)
+            .then(response => response.text())
+            .then(data => console.log(data))
+            .then(() => setdetectedFiles(detectedFiles.filter(item => item[0]!=id)));
+    }
 
     useEffect(() => {
         // ----COSMETIC ONLY----
@@ -46,14 +57,16 @@ function ScannerInterface() {
                 indx++;
             }
         }, 200);
+        let unsafeItem = [];
         Object.keys(scanReport).map((fileName) => {
             if (scanReport[fileName] === "SKIPPED") {
                 setskippedFilesCount(skippedFilesCount => skippedFilesCount += 1);
             }
             else if (scanReport[fileName] != "SAFE") {
-                setunsafeFilesCount(unsafeFilesCount => unsafeFilesCount += 1);
+                unsafeItem.push([fileName,scanReport[fileName]]);
             }
-        }) 
+        })
+        setdetectedFiles(unsafeItem); 
         return () => {
             clearInterval(interval);
         }
@@ -74,7 +87,24 @@ function ScannerInterface() {
                         <br />
                         <span>Files Skipped: {skippedFilesCount}</span>
                         <br />
-                        <span>Malware Detected: {unsafeFilesCount}</span>
+                        <span>Malware Detected: {detectedFiles.length}</span>
+                        <br/><br/>
+                        <div>
+                            <table>
+                                <tbody>
+                                {detectedFiles.map((fileData) => {
+                                    return(
+                                        <tr key={fileData[0]}>
+                                            <td>{fileData[0]}</td>
+                                            <td>{fileData[1]}</td>
+                                            <td><button id={fileData[0]} className='itemStatusPill' style={{ 'backgroundColor': "lightgreen" }} onClick={(e) => setQuar(e.target.id,fileData[1])}>Quarantine</button></td>
+                                            <td><button id={fileData[0]} className='itemStatusPill' style={{ 'backgroundColor': 'lightred' }}>Ignore</button></td>
+                                        </tr>
+                                    )
+                                })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     : <></>
             }

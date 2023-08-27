@@ -9,6 +9,7 @@ class Store {
         // const userDataPath = (electron.app || electron.remote.app).getPath('userData');
         const userDataPath = opts.userPath;
         if (!fs.existsSync(userDataPath)) {
+            console.log(userDataPath);
             fs.mkdirSync(userDataPath);
         }
         // console.log(userDataPath);

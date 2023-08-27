@@ -54,7 +54,8 @@ def systemWatcher(XylentScanner,thread_resume):
       try:
           if pathToScan:
             XylentScanner.scanFile(pathToScan)
-      except:
+      except Exception as e:
+        print(e)
         print(str(action)+" "+file+" ")
 
   print("RTP waiting to start...")

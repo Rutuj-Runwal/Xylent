@@ -7,6 +7,7 @@ from systemWatcher import systemWatcher
 import threading
 # Compile to executable with: pyinstaller -F engine.py --hidden-import pywin32 --hidden-import plyer.platforms.win.notification --uac-admin
 app = Flask(__name__)
+
 # Load in SHA256 signatures
 PATH = "./rules/sha256_db.txt"
 signaturesData = {}
@@ -19,10 +20,14 @@ for i in range(len(temp)):
 print("Signatures loaded!")
 
 # compile yara rulesets
-
-@app.route('/compileYaraSigs',methods=['GET'])
 def compileYaraSigs():
-    BASE_PATH = app.root_path
+    import sys
+    if getattr(sys, 'frozen',False):
+            # Current Path
+            BASE_PATH  = "./"
+    else:
+        BASE_PATH = app.root_path
+        
     print(BASE_PATH)
     yaraRules = ""
     dummy = ""
@@ -31,7 +36,7 @@ def compileYaraSigs():
     yara_rule_directory = os.path.join(
         BASE_PATH, "signature-base/yara".replace("/", os.sep))
     if not os.path.exists(yara_rule_directory):
-        print("Cannot find signature base")
+        return "Cannot find signature base"
     if not os.path.exists(BASE_PATH+'/compiledRules'):
         for root, directories, files in os.walk(yara_rule_directory, followlinks=False):
             for file in files:
@@ -58,8 +63,7 @@ def compileYaraSigs():
                     yaraRules += yara_rule_data
 
                 except Exception as e:
-                    print("Error reading signature file %s ERROR: %s" %
-                        (yaraRuleFile, sys.exc_info()[1]))
+                    print("Error reading signature file %s" % (yaraRuleFile))
         try:
             compiledRules = yara.compile(source=yaraRules, externals={
                 'filename': dummy,
@@ -74,6 +78,8 @@ def compileYaraSigs():
             return "Initialized" + rule_count +" Yara rules"
         except Exception as e:
             return "Error during YARA rule compilation ERROR: - please fix the issue in the rule set"
+with app.app_context():
+    compileYaraSigs()
 
 XylentScanner = Scanner(signatures=signaturesData, rootPath=app.root_path)
 
@@ -147,7 +153,6 @@ def getUsername():
 @app.route("/toggleItemsForStartup", methods=['POST'])
 def toggleStartupItems():
     import winreg
-    from flask import request
     location = winreg.HKEY_CURRENT_USER
     myKey = winreg.OpenKeyEx(
         location, r"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run", 0, winreg.KEY_SET_VALUE)
@@ -170,8 +175,6 @@ def scans():
     SCAN_TYPE = data['scanType']
     print(SCAN_TYPE)
     # Intialize scanner object
-    import os
-    import time
     # https://peps.python.org/pep-0635/
     if SCAN_TYPE=="Quick":
         # TODO: Add paths based on the platform, i.e. windows,linux,macos
@@ -183,8 +186,12 @@ def scans():
         # print(temp)
         Appdata = os.path.expandvars(AppdataPath)
         desktop = os.path.expandvars(desktopPath)
+        # REMOVE - TEMP ONLY !!!!!!!!!
+        tPath = R"%UserProfile%\Downloads\Test\TestX"
+        testPath = os.path.expandvars(tPath)
+        # REMOVE - TEMP ONLY !!!!!!!!!
         # x = time.time()
-        scanReport = XylentScanner.scanFolders(location=[temp])
+        scanReport = XylentScanner.scanFolders(location=[testPath])
         # y = time.time()
         # print("--------------")
         # print("Time taken:",y-x)
@@ -207,15 +214,31 @@ def deviceStats():
     if(wifi.is_enabled()):
         print(wifi.is_connected())
 
+@app.route("/quarFile",methods=['POST'])
+def quarDile():
+    data = request.json
+    originalPath = data["originalPath"]
+    detectionSpace = data['detectionSpace']
+    XylentScanner.quar.quarantine(originalPath, detectionSpace)
+    return "Done!"
+
 @app.route("/restoreFile",methods=['POST'])
 def restoreFile():
     data = request.json
     originalPath = data["originalPath"]
-    # Pause RTP thread to restore file
+    # Pause (Real time protection)[RTP] thread to restore file
     thread_resume.clear()
     XylentScanner.quar.restore(originalPath)
     # Start RTP thread after restore complete
     thread_resume.set()
+    return "Done"
+
+@app.route("/restoreFile", methods=['POST'])
+def removeFile():
+    data = request.json
+    originalPath = data["originalPath"]
+    # No need to pause RTP thread as quarantine path is always excluded
+    XylentScanner.quar.remove(originalPath)
     return "Done"
 
 def addFirewallRules(url):
@@ -317,4 +340,4 @@ def launchProgram():
         return "Cannot open: " + PROGRAM_PATH
     
 if __name__ == '__main__':
-   app.run(debug=True)
+   app.run(debug=False)

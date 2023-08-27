@@ -9,7 +9,8 @@
     "files": [
       "./main.js",
       "./build/js/app.js",
-      "./index.html"
+      "./index.html",
+      "./store.js"
     ],
     "extraMetadata": {
       "main": "main.js"
