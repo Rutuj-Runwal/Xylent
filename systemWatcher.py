@@ -5,7 +5,7 @@ from quarantineThreats import Quarantine
 import time
 quar = Quarantine()
 def systemWatcher(XylentScanner,thread_resume):
-  while thread_resume.is_set():
+  while thread_resume.wait():
     path_to_watch = "C:\\"
     hDir = win32file.CreateFile(
         path_to_watch,

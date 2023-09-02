@@ -15,7 +15,7 @@ function QuarantineHandler() {
             .then(data => console.log(data))
             .then(() => window.location.reload());
     }
-    var removeQuar = () => {
+    var removeQuar = (id) => {
         console.log("Deleting: " + id);
         const requestOptions = {
             method: 'POST',

@@ -16,9 +16,6 @@ function Sidebar() {
       Privacy: { 'Microphone': { link: 'NA', desc: 'Modify microphone access', commandData: { program: 'Powershell', command: "Start ms-settings:privacy-microphone" } }, 'Camera': { link: 'NA', desc: 'Modify webcam access', commandData: { program: 'Powershell', command: "Start ms-settings:privacy-webcam" }}, 'RRAdblocker': { link: 'NA', externalLink: 'https://rutuj-runwal.github.io/RRAdblocker/', desc: 'Adblocking, Tracker and Malware Protection' } } 
     },
     CONFIGS:{
-      Home:{'Real Time Protection':{type:'toggle',value:true},'Notification':{type:'toggle',value:false},'Notification Duration':{type:'choice',value:'2'},'Auto check for definition updates':{type:'toggle',value:true},'Auto check for program updates':{type:'toggle',value:true}},
-      Protection:{'Scan PE files':{type:'toggle',value:true},'Apply additional checks for archives':{type:'toggle',value:true},'Treat un-signed executables as suspicious':{type:'toggle',value:true},'Automatically Quarantine detected threats':{type:'toggle',value:true},'Scan Suspicious filetypes only':{type:'toggle',value:true}},
-      Performance:{'Auto disable suspicious startup items':{type:'toggle',value:false},'Clean temp files older than 24 hours only':{type:'toggle',value:true}}
 
     }
   }
@@ -26,7 +23,7 @@ function Sidebar() {
     <>
       {!(location.pathname === "/status" || location.pathname === "/") ? <button className='sideBar_BackNav' onClick={() => navigate(-1)}>&#8592;</button> : <></>}
       <IconContext.Provider style={{strokeWidth:'10px !important',stroke:'green'}} value={{ color: "green" }}>
-        {(location.pathname === "/status" || location.pathname === "/" || location.pathname.includes("/mainFrame")) ? <Link to="/options" state={{ config: menuOptions.CONFIGS, prevPath: location.pathname }}>
+        {(location.pathname === "/status" || location.pathname === "/" || location.pathname.includes("/mainFrame")) ? <Link to="/options" state={{prevPath: location.pathname }}>
           <LuSettings className='sideBar_setting_icon' size={23} />
         </Link> : <></>}  
       </IconContext.Provider>

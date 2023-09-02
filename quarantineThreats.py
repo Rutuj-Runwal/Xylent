@@ -17,7 +17,7 @@ class Quarantine:
                 os.mkdir(self.QuarantineDir)
             except FileNotFoundError:
                 print("Cannot create quarantine folder")
-                # TODO: Create a universal backup quarantine path
+                # TODO: Create a universal backup/"fallback" quarantine path - (probably in current root?)
 
     def killProcess(self,fileName):
         # Try to kill the process if it's active in system's memory
@@ -43,7 +43,6 @@ class Quarantine:
             # TODO: Add encryption-decryption mechanic to the quarantine process
             fileToMove = os.path.join(self.QuarantineDir, fileName)
             
-            # TODO: fix PermissionError by getting admin elevated access
             # os.replace(self.file, fileToMove)
             self.store.setVal(str(file),detectionSpace)
             shutil.move(str(file),str(fileToMove))   
@@ -77,11 +76,16 @@ class Quarantine:
         fileName = originalPath.split("\\")[-1]
         quarPath = os.path.join(self.QuarantineDir,fileName)
         self.store.removeVal(originalPath)
-        shutil.move(quarPath,originalPath)
+        if os.path.exists(quarPath):
+            shutil.move(quarPath,originalPath)
+        else:
+            print("File Not Found, removing quarantine record!")
     
     def remove(self,originalPath):
         fileName = originalPath.split("\\")[-1]
         quarPath = os.path.join(self.QuarantineDir, fileName)
-
+        self.store.removeVal(originalPath)
         if os.path.exists(quarPath):
             os.remove(quarPath)
+        else:
+            print("File Not Found, removing quarantine record!")

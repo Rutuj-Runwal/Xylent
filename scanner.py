@@ -53,8 +53,7 @@ class Scanner:
             if hash!="":
                 return hash
         except (PermissionError, OSError):
-            # TODO: Run app with admin privilage to avoid PermissionError or OSError for certain locations and filetypes
-            # print("Permission Error")
+            print("Permission Error")
             return "RR_permission_error"
     
     def verifyExecutableSignature(self,path):

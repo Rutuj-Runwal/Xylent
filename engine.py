@@ -93,6 +93,23 @@ realTime_thread = threading.Thread(
     target=startSystemWatcher,args=(thread_resume,))
 realTime_thread.start()
 
+@app.route("/setUserSetting",methods=['POST'])
+def setUserSetting():
+    data = request.json
+    SETTING = data['setting']
+    VALUE = data['value']
+    print(VALUE)
+    if SETTING=="Real Time Protection":
+        if VALUE==True:
+            # Start (Real time protection)[RTP] thread to restore file
+            thread_resume.set()
+        else:
+            thread_resume.clear()
+            print("Thread Set!")
+    return "Config Applied!"
+
+
+
 @app.route("/getActiveProcesses",methods=['GET'])
 def activeProcess():
     import subprocess
@@ -215,7 +232,7 @@ def deviceStats():
         print(wifi.is_connected())
 
 @app.route("/quarFile",methods=['POST'])
-def quarDile():
+def quarFile():
     data = request.json
     originalPath = data["originalPath"]
     detectionSpace = data['detectionSpace']
@@ -233,7 +250,7 @@ def restoreFile():
     thread_resume.set()
     return "Done"
 
-@app.route("/restoreFile", methods=['POST'])
+@app.route("/removeFile", methods=['POST'])
 def removeFile():
     data = request.json
     originalPath = data["originalPath"]
