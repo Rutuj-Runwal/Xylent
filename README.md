@@ -7,6 +7,9 @@ A powerful antivirus built using Electron framework and python
 - Real Time System Watch
 - Database based quering(md5 and sha256)
 - Yara based pattern matching analysis
+- Quarantine Handler
+- Startup Items Management
+- Configurable Quick Settings
 - Basic Scans -> Quick
 
 ### Xylent Interface
@@ -41,6 +44,7 @@ https://github.com/Rutuj-Runwal/Xylent/assets/59436520/99a0af23-0e1e-4f5e-abcc-c
 
 
 ### Expected Features/Coming Soon
+- Fuzzy Hashing based detection
 - Intelligent/Smart cleaning
     - Cache cleaner -> temp,prefetch, Browser cache...
     - Disable/Enable startup
