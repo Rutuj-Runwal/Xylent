@@ -7,6 +7,7 @@ A powerful antivirus built using Electron framework and python
 - Real Time System Watch
 - Database based quering(md5 and sha256)
 - Yara based pattern matching analysis
+- Executable file signature and integrity analysis
 - Quarantine Handler
 - Startup Items Management
 - Configurable Quick Settings
