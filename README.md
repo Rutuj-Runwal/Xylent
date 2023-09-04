@@ -47,7 +47,7 @@ https://github.com/Rutuj-Runwal/Xylent/assets/59436520/99a0af23-0e1e-4f5e-abcc-c
 - Fuzzy Hashing based detection
 - Intelligent/Smart cleaning
     - Cache cleaner -> temp,prefetch, Browser cache...
-    - Disable/Enable startup
+    - Automatically apply recommended OS settings
 - File Insights: [VirusTotal](https://github.com/Rutuj-Runwal/Context-Menu-Scanner) based quering, 
 - Web Insights: whois lookup for inbound/outbound urls, virustotal / [McAfee siteadvisor](https://github.com/Rutuj-Runwal/MalwareProtection)
 - Basic Scans --> Full,Custom,Memory based scans
