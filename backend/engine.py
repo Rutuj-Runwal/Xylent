@@ -23,7 +23,7 @@ print("Signatures loaded!")
 def compileYaraSigs():
     import sys
     if getattr(sys, 'frozen',False):
-            # Current Path
+            # Current Path - For Frozen executable[prod]
             BASE_PATH  = "./"
     else:
         BASE_PATH = app.root_path
@@ -105,7 +105,7 @@ def setUserSetting():
             thread_resume.set()
         else:
             thread_resume.clear()
-            print("Thread Set!")
+            print("RTP Set!")
     return "Config Applied!"
 
 

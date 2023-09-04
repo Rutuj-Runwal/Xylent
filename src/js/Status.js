@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate,Link } from "react-router-dom";
 import { LuTrash } from "react-icons/lu";
 import { TbHeartRateMonitor } from "react-icons/tb";
 import { RiScanLine } from "react-icons/ri";
+import { ipcRenderer } from 'electron';
+import Store from '../../store';
 function Status() {
-  const [skippedFilesCount, setskippedFilesCount] = useState(0);
   let navigate = useNavigate();
   const routeChange = () => {
     let path = `/scanUI`;
@@ -21,6 +22,47 @@ function Status() {
   //     setTimeout(() => { setcurrScan(fileName); }, 300);
   //   });
   // }
+  useEffect(() => {
+    ipcRenderer.send('xylent-get-path', "XYLENT_GET_APP_PATH");
+    ipcRenderer.once('xylent-get-path', (event, basePath) => {
+      const store = new Store({
+        configName: "user_preference",
+        defaults: {
+          "Real Time Protection": true,
+          "Notification": false,
+          "Notification Duration": 2,
+          "Auto check for definition updates": true,
+          "Auto check for program updates": true,
+          "Scan PE files": true,
+          "Apply additional checks for archives": true,
+          "Treat un-signed executables as suspicious": true,
+          "Automatically Quarantine detected threats": true,
+          "Scan Suspicious filetypes only": true,
+          "Auto disable suspicious startup items": false,
+          "Clean temp files older than 24 hours only": true
+        },
+        userPath: basePath + "/config/"
+      });
+      var stat = document.getElementsByClassName('circle');
+      var statMsg = document.getElementById('statMsg');
+      var cssVariables = document.querySelector(':root');
+      var compStyles = getComputedStyle(cssVariables);
+      if(!store.get("Real Time Protection")){
+        // Reversing value to create reverse animation
+        cssVariables.style.setProperty('--scaleAt0', 1.4);
+        cssVariables.style.setProperty('--scaleAt100', 1);
+        cssVariables.style.setProperty('--xylentPrimary', '#FF1E00');
+        statMsg.innerHTML = "At Risk!";
+      }else{
+        cssVariables.style.setProperty('--scaleAt0', 1);
+        cssVariables.style.setProperty('--scaleAt100', 1.4);
+        cssVariables.style.setProperty('--xylentPrimary', '#00B01D');
+        statMsg.innerText = "System is Secure"
+      }
+      
+    })
+  },[])
+  
   return (
     <div className="flex_col">
       <h3 style={{ "textAlign": 'center' }}>Welcome to Xylent Antivirus!</h3>
@@ -30,8 +72,8 @@ function Status() {
             <div className="checkMark"></div>
           </div>
         </div>
-        <div className='flex_col just_cent'>
-          <p style={{ 'fontSize': '30px' }}>&nbsp;&nbsp;&nbsp;System is Secure</p>
+        <div className='flex_col just_cent' style={{ 'marginLeft': '35px' }}>
+          <p id="statMsg" style={{ 'fontSize': '30px'}}>System is Secure</p>
           <button onClick={routeChange} id="homeScanNow_Btn">Scan Now</button>
         </div>
       </div>

@@ -42,7 +42,6 @@ class Quarantine:
 
             # TODO: Add encryption-decryption mechanic to the quarantine process
             fileToMove = os.path.join(self.QuarantineDir, fileName)
-            
             # os.replace(self.file, fileToMove)
             self.store.setVal(str(file),detectionSpace)
             shutil.move(str(file),str(fileToMove))   

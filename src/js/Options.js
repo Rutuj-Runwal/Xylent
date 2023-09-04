@@ -42,7 +42,7 @@ function Options() {
       "Auto disable suspicious startup items": false,
       "Clean temp files older than 24 hours only": true
     },
-    userPath: "./" + "/config/"
+    userPath: "./backend" + "/config/"
   });
   var storeUserPreference = (id,checked) => {
     console.log(id);

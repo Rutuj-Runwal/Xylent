@@ -13,7 +13,12 @@
       -webkit-app-region: drag;
       
     }
-
+    :root {
+      --scaleAt0: 1;
+      --scaleAt100: 1.4; 
+      --xylentPrimary: #00B01D;
+      --xylentAlert: #B01D00;
+    }
     /* GLOBAL */
     a{
       text-decoration: none !important;
@@ -130,7 +135,7 @@
       border-radius: 20px;
       width: 150px;
       height: 35px;
-      background-color: #00B01D;
+      background-color: var(--xylentPrimary);
       color: white;
       padding: 5px;
       font-size: 17px;
@@ -145,17 +150,18 @@
 
     fieldset{
       border-radius: 10px;
-      border: 3px solid #00B01D;
+      border: 3px solid var(--xylentPrimary);
     }
 
     legend { margin: 0 auto; }
 
     #dashboard_status{
-      width: 130px;
+      width: 120px;
       height: 200px;
+      font-size: 14px;
     }
     #dashboard_tools{
-      width: 430px;
+      width: 300px;
       height: 200px;
     }
     .dashboard_stat_count{
@@ -244,7 +250,7 @@
     /* check mark */
     .circle {
       position: relative;
-      background: #00B01D;
+      background: var(--xylentPrimary);
       border-radius: 100%;
       height: 120px;
       width: 120px;
@@ -261,8 +267,8 @@
       border-right: 5px solid #fff;
     }
 
-    .circle:before,
-    .circle:after {
+    .circle::before,
+    .circle::after {
       content: '';
       display: block;
       position: absolute;
@@ -270,31 +276,30 @@
       right: 0;
       bottom: 0;
       left: 0;
-      border: 3px solid #00B01D;
+      border: 3px solid var(--xylentPrimary);
       border-radius: 50%;
     }
 
-
-    .circle:before {
+    .circle::before {
       animation: ripple 2s linear infinite;
     }
 
-    .circle:after {
+    .circle::after {
       animation: ripple 2s linear 1s infinite;
     }
-
+    
     @keyframes ripple {
       0% {
-        transform: scale(1);
+        transform: scale(var(--scaleAt0));
       }
 
       50% {
         transform: scale(1.2);
-        opacity: 1;
+        opacity: 0\1;
       }
 
       100% {
-        transform: scale(1.4);
+        transform: scale(var(--scaleAt100));
         opacity: 0;
       }
     }
@@ -318,8 +323,7 @@
       width: 1rem;
       height: 1rem;
       display: block;
-
-      border: 4px solid red;
+      border: 4px solid var(--xylentAlert);
       border-top-color: transparent;
       border-radius: 50%;
     }

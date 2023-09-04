@@ -4,7 +4,7 @@ let win;
 // const userDataPath = app.getPath('userData');
 const exePath = app.getPath('exe');
 var basePath = exePath.slice(0, exePath.lastIndexOf("\\"));
-basePath = "./";
+basePath = "./backend";
 console.log(basePath);
 function createWindow() {
     let backend;

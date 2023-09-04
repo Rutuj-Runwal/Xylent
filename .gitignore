@@ -10,12 +10,12 @@
 __pycache__/
 
 # production
-/build
-/dist
-/signature-base
-/uiDesignTemplates
-/config
-/scanExtracts
+**/build
+**/dist
+**/signature-base
+**/uiDesignTemplates
+**/config
+**/scanExtracts
 # misc
 .DS_Store
 .env.local
