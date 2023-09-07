@@ -43,7 +43,6 @@ function Status() {
         },
         userPath: basePath + "/config/"
       });
-      var stat = document.getElementsByClassName('circle');
       var statMsg = document.getElementById('statMsg');
       var cssVariables = document.querySelector(':root');
       var compStyles = getComputedStyle(cssVariables);
@@ -59,7 +58,18 @@ function Status() {
         cssVariables.style.setProperty('--xylentPrimary', '#00B01D');
         statMsg.innerText = "System is Secure"
       }
-      
+
+      // Set dashboard statistics
+      const statStore = new Store({
+        configName: "system_stats",
+        defaults: {
+          "Threats Blocked": 0,
+          "Items Scanned": 0
+        },
+        userPath: basePath + "/config/"
+      })
+      document.getElementsByClassName("dashboard_stat_count")[0].innerText = statStore.get("Threats Blocked");
+      document.getElementsByClassName("dashboard_stat_count")[1].innerText = statStore.get("Items Scanned");
     })
   },[])
   
@@ -80,16 +90,12 @@ function Status() {
       <br />
       <div className='flex_row spc_btwn'>
         <fieldset id='dashboard_status'>
-          <legend>Stats</legend>
+          <legend>Previous Scan</legend>
           <div className='flex_col'>
             <div>
-              <span className='dashboard_stat_count'>X&nbsp;</span><span>Malware Blocked</span>
-              <hr/>
-              <span className='dashboard_stat_count'>X&nbsp;</span><span>Process Scanned</span>
-              <hr/><hr/>
-              <span className='dashboard_stat_count'>X&nbsp;</span><span>URL's blocked</span>
-              <hr/>
-              <span className='dashboard_stat_count'>X&nbsp;</span><span>URL's analyzed</span>
+              <p className='just_cent' style={{ 'textAlign': 'center', 'fontSize': '20px', 'margin': '10px' }}><span className='dashboard_stat_count'>X</span><br /><span style={{'fontSize':'15px'}}>Threats Blocked</span></p>
+              <br/>
+              <p className='just_cent' style={{ 'textAlign': 'center', 'fontSize': '20px', 'margin': '10px' }}><span className='dashboard_stat_count'>X</span><br /><span style={{ 'fontSize': '15px' }}>Items Scanned</span></p>
             </div>
           </div>
         </fieldset>

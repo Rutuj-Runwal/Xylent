@@ -17,6 +17,7 @@
       --scaleAt0: 1;
       --scaleAt100: 1.4; 
       --xylentPrimary: #00B01D;
+      --xylentPrimaryHue: #00CA21;
       --xylentAlert: #B01D00;
     }
     /* GLOBAL */
@@ -165,7 +166,8 @@
       height: 200px;
     }
     .dashboard_stat_count{
-      font-size:15px;
+      color: var(--xylentPrimary);
+      text-shadow: 1px 1px var(--xylentPrimaryHue);
     }
     .dashboard_tools_item {
       background-color: #fff;
@@ -238,11 +240,11 @@
 
     input:checked + .toggle_slider:before{
       transform: translateX(20px); /*translateX(w-h)*/
-      background-color: #00ca21;
+      background-color: var(--xylentPrimaryHue);
     }
 
     input:checked + .toggle_slider{
-      box-shadow: 0 0 0 2px #00ca21, 0 0 8px #00ca21;
+      box-shadow: 0 0 0 2px var(--xylentPrimaryHue), 0 0 8px var(--xylentPrimaryHue);
     }
 
     /* Toggle */

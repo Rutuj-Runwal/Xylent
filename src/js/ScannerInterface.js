@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from "react-router-dom";
-
+import { ipcRenderer } from 'electron';
+import Store from '../../store';
 function ScannerInterface() {
     const [scanReport, setscanReport] = useState([]);
     const [currScan, setcurrScan] = useState('Scanning');
@@ -32,7 +33,7 @@ function ScannerInterface() {
         return dataJ;
     }
     var setQuar = (id,detection) => {
-        console.log("Contained threat: " + id)
+        console.log("Contained threat: " + id);
         const requestOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -66,7 +67,22 @@ function ScannerInterface() {
                 unsafeItem.push([fileName,scanReport[fileName]]);
             }
         })
-        setdetectedFiles(unsafeItem); 
+        setdetectedFiles(unsafeItem);
+        
+        // Save dashboard statistics
+        ipcRenderer.send('xylent-get-path', "XYLENT_GET_APP_PATH");
+        ipcRenderer.once('xylent-get-path', (event, basePath) => {
+            const store = new Store({
+                configName: "system_stats",
+                defaults: {
+                    "Threats Blocked": 0,
+                    "Items Scanned":0
+                },
+                userPath: basePath + "/config/"
+            })
+            store.set('Threats Blocked', store.get('Threats Blocked') + unsafeItem.length);
+            store.set('Items Scanned', store.get('Items Scanned') + Object.keys(scanReport).length);
+        });
         return () => {
             clearInterval(interval);
         }
