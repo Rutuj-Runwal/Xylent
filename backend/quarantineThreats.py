@@ -53,6 +53,8 @@ class Quarantine:
         fileName = originalZipPath.split("\\")[-1]
         # print("Name of file:"+str(fileName))
         tempZipPath = "./scanExtracts"
+        if not os.path.exists(tempZipPath):
+            os.mkdir(tempZipPath)
         if preserveArchiveContent:
             # STABLE BUT SLOW - COPIES/REPLACES FILES
             '''In order to preserve files in archive, only malicious file(s) from the archive is removed'''
