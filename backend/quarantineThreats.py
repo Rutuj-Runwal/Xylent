@@ -25,7 +25,6 @@ class Quarantine:
             os.system("taskkill /f /im "+fileName)
         except Exception:
             print("Cant kill, threat not active / Not an executable type")
-            # print(self.file)
     
     def quarantine(self, file,detectionSpace):
         fileName = file.split("\\")[-1]
@@ -42,7 +41,6 @@ class Quarantine:
 
             # TODO: Add encryption-decryption mechanic to the quarantine process
             fileToMove = os.path.join(self.QuarantineDir, fileName)
-            # os.replace(self.file, fileToMove)
             self.store.setVal(str(file),detectionSpace)
             shutil.move(str(file),str(fileToMove))   
             print("DONE IN QUARS!!!")   
@@ -51,7 +49,6 @@ class Quarantine:
         # originalZipPath = self.store.getVal('ZipPath')
         print("Original Zip Path: "+str(originalZipPath))
         fileName = originalZipPath.split("\\")[-1]
-        # print("Name of file:"+str(fileName))
         tempZipPath = "./scanExtracts"
         if not os.path.exists(tempZipPath):
             os.mkdir(tempZipPath)

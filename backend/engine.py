@@ -5,7 +5,7 @@ from scanner import Scanner
 from suspiciousWPDetector import SuspiciousWPDetector
 from systemWatcher import systemWatcher
 import threading
-# Compile to executable with: pyinstaller -F engine.py --hidden-import pywin32 --hidden-import plyer.platforms.win.notification --uac-admin
+# Compile to executable with: pyinstaller -F engine.py --hidden-import pywin32 --hidden-import notify-py --uac-admin
 app = Flask(__name__)
 
 # Load in SHA256 signatures
@@ -131,13 +131,11 @@ def startupItems():
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     data = []
     for line in proc.stdout:
-        # print(line.decode().rstrip().split(" "))
         data.append(line.decode().lstrip().rstrip())
     data = list(filter(None, data))
     print(data)
     data.remove("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run")
-    # print("---------------------")
-    # print(data[11].split())
+
     # Preprocess
     processName = []
     temp = []
@@ -161,11 +159,6 @@ def startupItems():
         processName.append([pName.rstrip(),enable,verdict])
     # print(processName)
     return processName
-
-@app.route("/loggedInUsername", methods=['GET'])
-def getUsername():
-    import getpass.getuser as getuser
-    return getuser()
 
 @app.route("/toggleItemsForStartup", methods=['POST'])
 def toggleStartupItems():
@@ -195,23 +188,16 @@ def scans():
     # https://peps.python.org/pep-0635/
     if SCAN_TYPE=="Quick":
         # TODO: Add paths based on the platform, i.e. windows,linux,macos
-        # user = getUsername()
         AppdataPath = R"C:\Users\$USERNAME\AppData"
         tempPath = R"${TEMP}"
         desktopPath = R"%UserProfile%\Desktop"
         temp = os.path.expandvars(tempPath)
-        # print(temp)
         Appdata = os.path.expandvars(AppdataPath)
         desktop = os.path.expandvars(desktopPath)
         # REMOVE - TEMP ONLY !!!!!!!!!
         tPath = R"%UserProfile%\Downloads\Test\TestX"
         testPath = os.path.expandvars(tPath)
-        # REMOVE - TEMP ONLY !!!!!!!!!
-        # x = time.time()
         scanReport = XylentScanner.scanFolders(location=[testPath])
-        # y = time.time()
-        # print("--------------")
-        # print("Time taken:",y-x)
         return scanReport
 
     elif SCAN_TYPE=="Full":
@@ -222,14 +208,6 @@ def scans():
         pass
     else:
         print("Invalid Scan Type")
-
-@app.route("/deviceStats", methods=['POST'])
-def deviceStats():
-    import shutil
-    from plyer import battery, devicename, wifi
-    print(battery.status)
-    if(wifi.is_enabled()):
-        print(wifi.is_connected())
 
 @app.route("/quarFile",methods=['POST'])
 def quarFile():
