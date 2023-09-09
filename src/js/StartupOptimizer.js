@@ -1,36 +1,24 @@
 import { useState,useEffect } from 'react';
-import { IconContext } from 'react-icons';
-import { IoCloseCircle, IoCheckmarkCircle, IoWarning } from "react-icons/io5";
-import { RxQuestionMarkCircled } from "react-icons/rx";
+import { useApiRequest } from './useApiRequest';
 
 function StartupOptimizer() {
   const [startupData, setStartupData] = useState([]);
   var toggle = (id,state) => {
-    const requestOptions = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ toggleTo: state, val: id })
-    };
-    fetch('http://127.0.0.1:5000/toggleItemsForStartup', requestOptions)
-      .then(response => response.text())
-      .then(data => console.log(data));
+    useApiRequest('http://127.0.0.1:5000/toggleItemsForStartup','POST',{toggleTo:state,val:id})
+    .then(data => console.log(data));
 
     fetchStartUPItms();
   }
 
   var fetchStartUPItms = () => {
-    fetch('http://127.0.0.1:5000/getStartUpItems').then(
-      (data) => data.json()
-    ).then(
-      (resp) => {
-        setStartupData(resp)
-      }
-    )
+    useApiRequest('http://127.0.0.1:5000/getStartUpItems','GET',undefined,'json')
+    .then(resp => setStartupData(resp))
   }
   useEffect(()=>{fetchStartUPItms()}, []);
 
   return (
     <table style={{ 'display': 'flex', 'flexDirection': 'column', 'tableLayout': 'fixed', 'borderCollapse': 'collapse', 'borderSpacing': '0', 'width': '650px' }}>
+      <tbody>
         <tr style={{ 'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between'}}>
           <th style={{ 'width': '200px', 'marginRight': '5px', 'padding': '0 !important' }}>Name</th>
           <th>Analysis</th>
@@ -60,6 +48,7 @@ function StartupOptimizer() {
 
           })
         }
+      </tbody>
     </table>
   )
 }

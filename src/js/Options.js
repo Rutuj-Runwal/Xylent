@@ -1,5 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import {useState,useEffect} from "react";
+import {useApiRequest} from './useApiRequest';
 import Store from '../../store';
 function Options() {
   const { state } = useLocation();
@@ -48,15 +49,8 @@ function Options() {
     console.log(id);
     console.log(checked);
     store.set(id,checked);
-    const requestOptions = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ setting: id, value:checked })
-    };
-    fetch('http://127.0.0.1:5000/setUserSetting', requestOptions)
-      .then(response => response.text())
-      .then(data => console.log(data))
-
+    
+    useApiRequest('http://127.0.0.1:5000/setUserSetting', 'POST', { setting: id, value: checked }).then(data => console.log(data))
   }
   useEffect(() => {
     var getData = () => {

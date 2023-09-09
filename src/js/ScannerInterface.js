@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from "react-router-dom";
 import { ipcRenderer } from 'electron';
 import Store from '../../store';
+import { useApiRequest } from './useApiRequest';
 function ScannerInterface() {
     const [scanReport, setscanReport] = useState([]);
     const [currScan, setcurrScan] = useState('Scanning');
@@ -20,29 +21,22 @@ function ScannerInterface() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scanType: state.scanType })
         };
-        var data = await fetch('http://127.0.0.1:5000/initiateScans', requestOptions)
-        var dataJ = await data.json();
-        setscanReport(dataJ);
+        var data = await useApiRequest('http://127.0.0.1:5000/initiateScans','POST',{scanType:state.scanType},'json')
+        setscanReport(data);
 
         document.getElementsByClassName("loading")[0].style.display = "none";
         if (document.getElementById("scanStats")) {
             document.getElementById("scanStats").style.display = "block";
         }
         document.getElementsByClassName("loading")[0].style.display = "none";
-        console.log(dataJ);
-        return dataJ;
+        console.log(data);
+        return data;
     }
     var setQuar = (id,detection) => {
         console.log("Contained threat: " + id);
-        const requestOptions = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ originalPath: id,detectionSpace:detection})
-        };
-        fetch('http://127.0.0.1:5000/quarFile', requestOptions)
-            .then(response => response.text())
-            .then(data => console.log(data))
-            .then(() => setdetectedFiles(detectedFiles.filter(item => item[0]!=id)));
+        useApiRequest('http://127.0.0.1:5000/quarFile', 'POST', {originalPath: id, detectionSpace: detection})
+        .then(data => console.log(data))
+        .then(() => setdetectedFiles(detectedFiles.filter(item => item[0]!=id)));
     }
 
     useEffect(() => {
