@@ -4,12 +4,26 @@ import Store from '../../store';
 import { ipcRenderer} from 'electron';
 function QuarantineHandler() {
     const [quarantineData, setquarantineData] = useState([]);
+    const [previous, setPrevious] = useState(0);
+    const [next, setNext] = useState(10);
     var handleQuar = (id,type) => {
         console.log("Handling: "+id)
         const url = type+"File"
         useApiRequest('http://127.0.0.1:5000/'+url, 'POST', { originalPath: id })
         .then(data => console.log(data))
         .then(() => window.location.reload());
+    }
+    var prevBtn = () => {
+        if(previous>0){
+            setPrevious(previous - 10);
+            setNext(next - 10);
+        }
+    }
+    var nextBtn = () => {
+        if (next < Object.keys(quarantineData).length){
+            setPrevious(previous + next);
+            setNext(next + 10);
+        }
     }
 
     useEffect(() => {
@@ -34,10 +48,10 @@ function QuarantineHandler() {
             <tbody>
             {   
                 Object.keys(quarantineData).length ?
-                Object.keys(quarantineData).map((val) => {
+                Object.keys(quarantineData).slice(previous, next).map((val) => {
                     return(
                         <tr key={val}>
-                            <td>{val}</td>
+                            <td className='quarTable'>{val}</td>
                             <td>{quarantineData[val]}</td>
                             <td><button id={val} className='itemStatusPill' style={{ 'backgroundColor': "lightgrey" }} onClick={(e) => handleQuar(e.target.id,'restore')}>Restore</button></td>
                             <td><button id={val} className='itemStatusPill' style={{ 'backgroundColor': 'lightblue' }} onClick={(e) => handleQuar(e.target.id,'remove')}>Delete</button></td>
@@ -50,6 +64,11 @@ function QuarantineHandler() {
                 </tr>
                 
             }
+            <br/>
+            <tr>
+                <td><button onClick={prevBtn}>Previous</button></td>
+                <td><button onClick={nextBtn}>Next</button></td>
+            </tr>
             </tbody>
         </table>
     )
