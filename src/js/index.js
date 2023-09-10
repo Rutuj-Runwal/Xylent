@@ -14,6 +14,7 @@ import Options from './Options';
 import SSERenderer from './SSERenderer';
 import XylentUndef from './XylentUndef';
 import QuarantineHandler from './QuarantineHandler';
+import { ipcRenderer } from 'electron';
 window.React = React;
 
 // const router = createHashRouter(
@@ -25,15 +26,24 @@ window.React = React;
 // );
 // TODO: upgrade to react router 6.4+ -> use createHashRouter and createRoutesFromElements
 const root = ReactDOM.createRoot(document.getElementById("root"));
+
+var handleNavEvent = (event) => {
+    ipcRenderer.send(event);
+}
+
 root.render(
 <>
     <HashRouter>
-        <div id="header">
+        <nav id="header">
             <div id="headerContent">
                 XYLENT Antivirus⚡
                 {/* TODO: Make this a custom window title frame */}
             </div>
-        </div>
+            <div id="header_actions">
+                <span className="header_action" onClick={() => handleNavEvent('minimize')}>&minus;</span>
+                <span className="header_action" onClick={() => handleNavEvent('close')}>&#10006;</span>
+            </div>
+        </nav>
         <div id="page">
             <div id="sideBar">
                 <Sidebar />

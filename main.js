@@ -28,8 +28,9 @@ function createWindow() {
         }
     )
     win = new BrowserWindow({
-        width: 800,
+        width: 790,
         height: 620,
+        frame:false,
         webPreferences: {
             nodeIntegration:true,
             contextIsolation: false
@@ -43,7 +44,13 @@ function createWindow() {
         if (data ==="XYLENT_GET_APP_PATH"){
             event.reply('xylent-get-path', basePath);
         }
+    });
+    ipcMain.on('minimize',() => {
+        win.minimize()
     })
+    ipcMain.on('close',() => {
+        win.close()
+    });
 }
 
 app.whenReady().then(() => {
