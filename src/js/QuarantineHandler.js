@@ -44,17 +44,22 @@ function QuarantineHandler() {
     }, []);
     
     return (
-        <table>
+        <table style={{'display':'grid'}}>
             <tbody>
+                <tr className=''><th>Path</th><th>Detection</th><th>Restore</th><th>Remove</th></tr>
             {   
                 Object.keys(quarantineData).length ?
                 Object.keys(quarantineData).slice(previous, next).map((val) => {
                     return(
                         <tr key={val}>
                             <td className='quarTable'>{val}</td>
-                            <td>{quarantineData[val]}</td>
-                            <td><button id={val} className='itemStatusPill' style={{ 'backgroundColor': "lightgrey" }} onClick={(e) => handleQuar(e.target.id,'restore')}>Restore</button></td>
-                            <td><button id={val} className='itemStatusPill' style={{ 'backgroundColor': 'lightblue' }} onClick={(e) => handleQuar(e.target.id,'remove')}>Delete</button></td>
+                            <td>{quarantineData[val].includes("SignatureBased") ? quarantineData[val].split("SignatureBased: ")[1] : quarantineData[val].split("Yara: ")[1]}</td>
+                            <td><button id={val} className='itemStatusPill' onClick={(e) => handleQuar(e.currentTarget.id, 'restore')}>
+                                <div className='flex_col just_cent'>
+                                <span style={{ 'fontSize': '20px', 'fontWeight': '900' }}>&#10554;</span>
+                                <span style={{ 'fontSize': '20px', 'fontWeight': '900', 'marginTop': '-17px' }}>&#10555;</span>
+                            </div></button></td>
+                            <td><button id={val} className='itemStatusPill' onClick={(e) => handleQuar(e.currentTarget.id,'remove')}>❌</button></td>
                         </tr>
                     )
                 })
