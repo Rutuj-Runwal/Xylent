@@ -1,7 +1,6 @@
 # Xylent
 A powerful antivirus built using Electron framework and python
 
-# ⚠ Work in Progress
 
 ### Added Features
 - Real Time System Watch
@@ -20,17 +19,39 @@ A powerful antivirus built using Electron framework and python
 <br/>
 <br/>
 
-![Xylent Antivirus StartupMenu Screen](https://github.com/Rutuj-Runwal/Xylent/blob/main/images/Xylent%20StartupMonitorUI.jpg)
+## Features Demonstration
 
-### Demo
+### Real Time Protection Demo:
 
-#### Real Time Protection Demo:
+- Xylent is capable of detecting and removing Malware
+- Blocks drive by downloads
+- Prevents malware replication
+- Blocks malware on file opening,renaming as well as copying
 
-- Carried out with eicar payload
-- Instant detection and quarantine of malware
+
+https://github.com/Rutuj-Runwal/Xylent/assets/59436520/38a76c6f-3bbe-49d7-baa0-c386d96e6492
 
 
-https://github.com/Rutuj-Runwal/Xylent/assets/59436520/61ae2e67-958f-4c75-ba7e-f9554b0438b2
+
+### Quarantine Management Demo:
+
+- Objects detected are placed into a secure quarantine folder
+- Xylent's UI provides a simple interface to restore or safely remove the files
+
+
+https://github.com/Rutuj-Runwal/Xylent/assets/59436520/86a85662-251d-4d20-a478-055ec5490222
+
+
+
+### Archive Auto Repair
+
+- Automatically repair's archive containing malicious files
+- Repairs infected files and keeps important data in the archive safe
+
+
+https://github.com/Rutuj-Runwal/Xylent/assets/59436520/9a5dda8e-2817-4ce4-b570-9799817dc2f8
+
+
 
 ### Startup monitor Demo:
 
