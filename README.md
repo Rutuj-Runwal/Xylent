@@ -112,5 +112,5 @@ https://github.com/Rutuj-Runwal/Xylent/assets/59436520/99a0af23-0e1e-4f5e-abcc-c
  - Extending capabilites towards Linux at a later stage
 
 ### Acknowledgements and References
-- [signature base](https://github.com/Neo23x0/signature-base) by [Florian Roth](https://github.com/Neo23x0) under [Detection Rules license](https://raw.githubusercontent.com/Neo23x0/signature-base/master/LICENSE)
+- Use [signature base](https://github.com/Neo23x0/signature-base) by [Florian Roth](https://github.com/Neo23x0) under [Detection Rules license](https://raw.githubusercontent.com/Neo23x0/signature-base/master/LICENSE) for additional detection capabitiies. Place the yare rules in `/backend/signature-base/yara/`
 - Custom simple "Dummy" yara rules - [ruleA](https://github.com/Rutuj-Runwal/Xylent/blob/main/backend/signature-base/yara/xylent_test_pdf.yar) & [ruleB](https://github.com/Rutuj-Runwal/Xylent/blob/main/backend/signature-base/yara/xylent_test_word.yar) to detect test malware( of type .docx and .pdf) designed specifically for Xylent Antivirus
