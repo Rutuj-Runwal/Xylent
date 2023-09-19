@@ -54,12 +54,12 @@ function QuarantineHandler() {
                         <tr key={val}>
                             <td className='quarTable'>{val}</td>
                             <td>{quarantineData[val].includes("SignatureBased") ? quarantineData[val].split("SignatureBased: ")[1] : quarantineData[val].split("Yara: ")[1]}</td>
-                            <td><button id={val} className='itemStatusPill' onClick={(e) => handleQuar(e.currentTarget.id, 'restore')}>
+                            <td><button id={val} className='quarHandleBtn' onClick={(e) => handleQuar(e.currentTarget.id, 'restore')}>
                                 <div className='flex_col just_cent'>
                                 <span style={{ 'fontSize': '20px', 'fontWeight': '900' }}>&#10554;</span>
                                 <span style={{ 'fontSize': '20px', 'fontWeight': '900', 'marginTop': '-17px' }}>&#10555;</span>
                             </div></button></td>
-                            <td><button id={val} className='itemStatusPill' onClick={(e) => handleQuar(e.currentTarget.id,'remove')}>❌</button></td>
+                            <td><button id={val} className='quarHandleBtn' onClick={(e) => handleQuar(e.currentTarget.id,'remove')}>❌</button></td>
                         </tr>
                     )
                 })
