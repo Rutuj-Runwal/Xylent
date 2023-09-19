@@ -13,6 +13,7 @@ __pycache__/
 **/build
 **/dist
 **/uiDesignTemplates
+**/signature-base
 **/config
 **/scanExtracts
 # misc
