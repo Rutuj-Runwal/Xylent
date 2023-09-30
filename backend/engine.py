@@ -8,6 +8,10 @@ import threading
 # Compile to executable with: pyinstaller -F engine.py --hidden-import pywin32 --hidden-import notify-py --uac-admin
 app = Flask(__name__)
 
+# Global Variables
+SYSTEM_DRIVE  =  os.path.expandvars("%systemdrive%")
+
+
 # Load in SHA256 signatures
 PATH = "./rules/sha256_db.txt"
 signaturesData = {}
@@ -86,7 +90,7 @@ XylentScanner = Scanner(signatures=signaturesData, rootPath=app.root_path)
 
 def startSystemWatcher(thread_resume):
     thread_resume.set()
-    systemWatcher(XylentScanner,thread_resume)
+    systemWatcher(XylentScanner,SYSTEM_DRIVE,thread_resume)
 
 thread_resume = threading.Event()
 realTime_thread = threading.Thread(
@@ -275,8 +279,8 @@ def cleanJunk():
     import time
     import shutil
     localTempPath = R"${TEMP}"
-    windowsTempPath = "C:\Windows\Temp"
-    prefetchPath = "C:\Windows\Prefetch"
+    windowsTempPath = SYSTEM_DRIVE+"\Windows\Temp"
+    prefetchPath = SYSTEM_DRIVE+"\Windows\Prefetch"
     now = time.time()
     size = 0
     root = [prefetchPath, os.path.expandvars(localTempPath), windowsTempPath]

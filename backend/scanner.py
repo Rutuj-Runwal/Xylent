@@ -4,7 +4,7 @@ import yara
 from quarantineThreats import Quarantine
 
 class Scanner:
-    fileTypes = [".vbs", ".ps", ".ps1", ".rar", ".tmp", ".bas", ".bat", ".chm", ".cmd", ".com", ".cpl", ".crt", ".dll", ".exe", ".hta", ".js", ".lnk", ".msc", ".ocx", ".pcd", ".pif", ".pot", ".pdf", ".reg", ".scr", ".sct", ".sys", ".url", ".vb", ".vbe", ".wsc", ".wsf", ".wsh", ".ct", ".t", ".input", ".war",".jsp", ".jspx", ".php", ".asp", ".aspx", ".doc", ".docx", ".pdf", ".xls", ".xlsx", ".ppt", ".pptx", ".tmp", ".log", ".dump", ".pwd", ".w", ".txt", ".conf", ".cfg", ".conf", ".config", ".psd1", ".psm1", ".ps1xml", ".clixml", ".psc1", ".pssc", ".pl", ".www", ".rdp", ".jar", ".docm", ".sys", ".zip", ".tar"]
+    fileTypes = [".vbs", ".ps", ".ps1", ".rar", ".tmp", ".bas", ".bat", ".chm", ".cmd", ".com", ".cpl", ".crt", ".dll", ".exe", ".hta", ".js", ".lnk", ".msc", ".ocx", ".pcd", ".pif", ".pot", ".pdf", ".reg", ".scr", ".sct", ".sys", ".url", ".vb", ".vbe", ".wsc", ".wsf", ".wsh", ".ct", ".t", ".input", ".war",".jsp", ".jspx", ".php", ".asp", ".aspx", ".doc", ".docx", ".pdf", ".xls", ".xlsx", ".ppt", ".pptx", ".tmp", ".log", ".dump", ".pwd", ".w", ".txt", ".conf", ".cfg", ".conf", ".config", ".psd1", ".psm1", ".ps1xml", ".clixml", ".psc1", ".pssc", ".pl", ".www", ".rdp", ".jar", ".docm", ".sys", ".zip", ".tar",".msi"]
 
     def __init__(self,signatures,rootPath):
         import sys
@@ -35,17 +35,18 @@ class Scanner:
             with open(path,'rb') as f:
                 bytes = f.read()
                 hash = hashlib.sha256(bytes).hexdigest()
-                f.close()
             if hash!="":
                 return hash
         except (PermissionError, OSError):
             print("Permission Error")
-            return "RR_permission_error"
+            return "XYLENT_PERMISSION_ERROR"
     
     def verifyExecutableSignature(self,path):
         import subprocess
         import time,datetime
-        command = "(Get-AuthenticodeSignature" + " " + path + ").Status"
+        # TODO: Add a check for appropriate file extensions [.exe, .msi etc]
+        cmd =  " " + f'"{path}"'
+        command = "(Get-AuthenticodeSignature" + cmd + ").Status"
         process = subprocess.run(['Powershell', '-Command', command], stdout=subprocess.PIPE, encoding='utf-8')
         now = time.time()
         ageInSec = now-os.stat(path).st_mtime
@@ -55,10 +56,11 @@ class Scanner:
         # UnknownError - invalid # High Suspicion - Score: 50
         # HashMismatch - treat as invalid # High Suspicion - Score: 50
         # NotTrusted - Moderate Suspicion - Score: 40 
+        print(process.stdout.strip())
         if process.stdout.strip() == "HashMismatch" or process.stdout.strip() == "UnknownError":
-            return {'score':50,'age':age}
+            return {'score':80,'age':age}
         elif process.stdout.strip()=="NotTrusted":
-            return {'score':40,'age':age}
+            return {'score':70,'age':age}
         elif process.stdout.strip()=="NotSigned":
             return {'score':30,'age':age}
         else:
@@ -75,14 +77,14 @@ class Scanner:
             print("----------------------------------------------------")
             if archiveExtractPath.split("/")[1] in path:
                 print("Skipped to avoid recursion.Depth=1 for scanning archives!")
-                return "Done!"
+                return "DONE!"
             else:
                 if not os.path.exists(archiveExtractPath):
                     os.mkdir(archiveExtractPath)
                 shutil.unpack_archive(path, archiveExtractPath)
                 verdicts = self.scanFolders(archiveExtractPath)
                 # dictionary in scanFolders leads to O(1) time
-                if "SignatureBased" or "Yara" in verdicts:
+                if "[S]" or "[Y]" in verdicts:
                     if os.path.exists(archiveExtractPath):
                         print("Malware detected in archive")
                         from notifypy import Notify
@@ -90,75 +92,90 @@ class Scanner:
                         notification.title = "Archive Repaired"
                         notification.message = "Archive with malicious content repaired.Malware removed,Safe content Preserved!"
                         notification.send()
-                        self.quar.quarantineFilesInArchive(
-                            originalZipPath=path, preserveArchiveContent=True)
+                        self.quar.quarantineFilesInArchive(originalZipPath=path, preserveArchiveContent=True)
 
         except Exception as e:
             print(e)
         return "DONE!"
 
     def scanFile(self,path):
-        detectionSpace = '' 
+        detectionSpace = "SAFE" 
         suspScore = 0
         isArchive = False
-        hashToChk = self.getFileHash(path)
+        fileExtension = ".unknown"
         try:
-            # TODO: use os.path.splittext or other effective alternatives
-            fileExtension = "."+path.split(".")[-1]
-        except Exception:
-            # TODO: better way to get file-extension. Prevent filename "cloaking" malware i.e. foo.txt.exe
-            fileExtension = ".unknown"
-            print("Internal temporary Skipped: "+path)
+            # TODO: use os.path.splitext or other effective alternatives
+            fileExtension = os.path.splitext(path)[1]
 
-        if fileExtension == ".zip" or fileExtension == ".tar":
-            isArchive = True
+            if not fileExtension == ".unknown" and fileExtension in self.fileTypes:
+                hashToChk = self.getFileHash(path)
 
-        # Time Taken: O(n) 
-        # TODO: optimize using Binary search for O(log(n))
-        # Signature based detection
-        if hashToChk == "RR_permission_error":
-            return "SKIPPED"
-    
-        elif hashToChk!="":
-            for hash in self.__signatures:
-                if hash==str(hashToChk):
-                    print(self.__signatures[hash])
-                    notif_str = "Xylent taking action against detected malware "+ path
-                    suspScore+=100
-                    detectionSpace = "SignatureBased: " + self.__signatures[hash]
-            # YARA RULES DETECTION
-            if not isArchive and suspScore==0:
-                try:
-                    matches = self.peid_rules.match(path)
-                    if matches:
-                        for match in matches:
-                            if 'score' in match.meta:
-                                suspScore += int(match.meta['score'])
+                if hashToChk == "XYLENT_PERMISSION_ERROR":
+                    return "SKIPPED"
+
+                if fileExtension == ".zip" or fileExtension == ".tar":
+                    isArchive = True
+                
+                if not isArchive and (fileExtension == ".exe" or fileExtension == ".msi"):
+                    print(path)
+                    print("Analyzing file signature....")
+                    exeSigData = self.verifyExecutableSignature(path)
+                    print(exeSigData)
+                    suspScore += exeSigData['score']
+                    if suspScore>=70:
+                        detectionSpace = "Invalid Signature"
+
+                # Time Taken: O(n) 
+                # TODO: optimize using Binary search for O(log(n))
+
+                # SIGNATURE BASED DETECTION
+                if hashToChk!="" and suspScore<70:
+                    for hash in self.__signatures:
+                        if hash==str(hashToChk):
+                            print(self.__signatures[hash])
+                            suspScore+=100
+                            detectionSpace = "[S]" + self.__signatures[hash]
+
+                    # YARA RULES DETECTION
+                    if not isArchive and suspScore==0:
+                        try:
+                            matches = self.peid_rules.match(path)
+                            if matches:
+                                for match in matches:
+                                    if 'score' in match.meta:
+                                        suspScore += int(match.meta['score'])
+                                    else:
+                                        # ⚠ Better scoring mechanism needed, if no score is provided ⚠
+                                        suspScore+=20
+                                    detectionSpace = "[Y]"+ str(match)
                             else:
-                                # ⚠ Better scoring mechanism needed, if no score is provided ⚠
-                                suspScore+=20
-                            notif_str = "Xylent is taking action against detected malware "+ path
-                            detectionSpace += " Yara: "+ str(match)
-                        # return "aeicar!"
-                except Exception as e:
-                    print("sKIPPED!")
+                                return "SAFE"
+                        except Exception as e:
+                            # print("SKIPPED!")
+                            pass
 
-        if not isArchive and suspScore >= 70:
-            from notifypy import Notify
-            notification = Notify()
-            notification.title = "Malware Detected"
-            notification.message = notif_str
-            notification.send()
-            self.quar.quarantine(path,detectionSpace)
-        
-        if isArchive:
-            self.handleArchives(path)
+                if not isArchive and suspScore >= 70:
+                    notif_str = "Xylent is taking action against detected malware "+ path
+                    from notifypy import Notify
+                    notification = Notify()
+                    notification.title = "Malware Detected"
+                    notification.message = notif_str
+                    notification.send()
+                    self.quar.quarantine(path,detectionSpace)
+                
+                if isArchive:
+                    self.handleArchives(path)
 
-        return detectionSpace
+                return detectionSpace
+            else:
+                return "SKIPPED"
+        except Exception as e:
+            print(e)
+            return "SKIPPED"
         # TODO: if file is packed: additional detection
         # TODO: if file is a .zip,.rar,.7z and other varients ADDITIONAL detections
 
-    
+
     def scanFolders(self,location):
         directories = []
         if isinstance(location, list):
@@ -174,19 +191,8 @@ class Scanner:
         # TODO: develop a caching heuristic to scan files only after a certain age has passed
         scanReport = {}
         for files in directories:
-            try:
-                # TODO: use os.path.splittext or other effective alternatives
-                fileExtension = "."+files.split(".")[-1]
-            except Exception:
-                # TODO: better way to get file-extension. Prevent filename "cloaking" malware i.e. foo.txt.exe
-                fileExtension = ".unknown"
-                print("Internal temporary Skipped: "+files)
-            if fileExtension in self.fileTypes:
-                verdict = self.scanFile(files)
-                if verdict != None and verdict != "" and verdict != "SKIPPED":
-                    scanReport[files] = verdict
-                elif verdict == "SKIPPED":
-                    scanReport[files] = "SKIPPED"
-                elif verdict == "":
-                    scanReport[files] = "SAFE"
+            verdict = self.scanFile(files)
+            if verdict:
+                print("Veridct is: "+verdict)
+                scanReport[files] = verdict
         return scanReport

@@ -1,12 +1,10 @@
 import os
 import win32file
 import win32con
-from quarantineThreats import Quarantine
 import time
-quar = Quarantine()
-def systemWatcher(XylentScanner,thread_resume):
+def systemWatcher(XylentScanner,SYSTEM_DRIVE,thread_resume):
   while thread_resume.wait():
-    path_to_watch = "C:\\"
+    path_to_watch = SYSTEM_DRIVE+"\\"
     hDir = win32file.CreateFile(
         path_to_watch,
         1,
@@ -33,23 +31,23 @@ def systemWatcher(XylentScanner,thread_resume):
     for action, file in results:
       pathToScan = os.path.join(path_to_watch, file)
       print(pathToScan)
-      if "C:\\Windows\\Prefetch\\" in pathToScan:
+      if SYSTEM_DRIVE + "\\Windows\\Prefetch\\" in pathToScan:
         pathToScan = ""
-      elif "C:\\Windows\\Temp" in pathToScan:
+      elif SYSTEM_DRIVE + "\\Windows\\Temp" in pathToScan:
         pathToScan = ""
-      elif "C:\\$Recycle.Bin" in pathToScan:
+      elif SYSTEM_DRIVE + "\\$Recycle.Bin" in pathToScan:
         pathToScan = ""
-      elif "C:\\Windows\\ServiceState" in pathToScan:
+      elif SYSTEM_DRIVE + "\\Windows\\ServiceState" in pathToScan:
         pathToScan = ""
-      elif "C:\\Windows\\Logs" in pathToScan:
+      elif SYSTEM_DRIVE + "\\Windows\\Logs" in pathToScan:
         pathToScan = ""
-      elif "C:\\Windows\\ServiceProfiles" in pathToScan:
+      elif SYSTEM_DRIVE + "\\Windows\\ServiceProfiles" in pathToScan:
         pathToScan = ""
-      elif "C:\\Windows\\System32" in pathToScan:
+      elif SYSTEM_DRIVE + "\\Windows\\System32" in pathToScan:
         pathToScan = ""
-      elif "C:\\Windows\\bootstat.dat" in pathToScan:
+      elif SYSTEM_DRIVE + "\\Windows\\bootstat.dat" in pathToScan:
         pathToScan = ""
-      elif quar.QuarantineDir in pathToScan:
+      elif XylentScanner.quar.QuarantineDir in pathToScan:
         pathToScan = ""
       try:
           if pathToScan:
