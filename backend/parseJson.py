@@ -8,6 +8,13 @@ class ParseJson:
         self.defaults = defaults
         self.data = self.parseDataFile(defaults)
     
+    def keyExists(self,key):
+        data = self.parseDataFile(self.defaults)
+        if key in data:
+            return True
+        else:
+            return False
+
     def getVal(self,key):
         return self.data[key]
     
@@ -26,6 +33,10 @@ class ParseJson:
         with open(self.PATH, 'w') as fp:
             json.dump(parsed_data, fp)
             #fp.close()
+
+    def purge(self):
+        with open(self.PATH, 'w') as fp:
+            json.dump({}, fp)
 
     def parseDataFile(self,defaults):
         try:

@@ -2,7 +2,10 @@ import os
 import win32file
 import win32con
 import time
+from parseJson import ParseJson
 def systemWatcher(XylentScanner,SYSTEM_DRIVE,thread_resume):
+  XYLENT_SCAN_CACHE  = ParseJson('./config','xylent_scancache',{})
+  XYLENT_CACHE_MAXSIZE = 500000 # 500KB
   while thread_resume.wait():
     path_to_watch = SYSTEM_DRIVE+"\\"
     hDir = win32file.CreateFile(
@@ -31,29 +34,35 @@ def systemWatcher(XylentScanner,SYSTEM_DRIVE,thread_resume):
     for action, file in results:
       pathToScan = os.path.join(path_to_watch, file)
       print(pathToScan)
-      if SYSTEM_DRIVE + "\\Windows\\Prefetch\\" in pathToScan:
-        pathToScan = ""
-      elif SYSTEM_DRIVE + "\\Windows\\Temp" in pathToScan:
-        pathToScan = ""
-      elif SYSTEM_DRIVE + "\\$Recycle.Bin" in pathToScan:
-        pathToScan = ""
-      elif SYSTEM_DRIVE + "\\Windows\\ServiceState" in pathToScan:
-        pathToScan = ""
-      elif SYSTEM_DRIVE + "\\Windows\\Logs" in pathToScan:
-        pathToScan = ""
-      elif SYSTEM_DRIVE + "\\Windows\\ServiceProfiles" in pathToScan:
-        pathToScan = ""
-      elif SYSTEM_DRIVE + "\\Windows\\System32" in pathToScan:
-        pathToScan = ""
-      elif SYSTEM_DRIVE + "\\Windows\\bootstat.dat" in pathToScan:
-        pathToScan = ""
-      elif XylentScanner.quar.QuarantineDir in pathToScan:
-        pathToScan = ""
-      try:
-          if pathToScan:
-            XylentScanner.scanFile(pathToScan)
-      except Exception as e:
-        print(e)
-        print(str(action)+" "+file+" ")
+      if not XYLENT_SCAN_CACHE.keyExists(pathToScan):
+        if SYSTEM_DRIVE + "\\Windows\\Prefetch\\" in pathToScan:
+          pathToScan = ""
+        elif SYSTEM_DRIVE + "\\Windows\\Temp" in pathToScan:
+          pathToScan = ""
+        elif SYSTEM_DRIVE + "\\$Recycle.Bin" in pathToScan:
+          pathToScan = ""
+        elif SYSTEM_DRIVE + "\\Windows\\ServiceState" in pathToScan:
+          pathToScan = ""
+        elif SYSTEM_DRIVE + "\\Windows\\Logs" in pathToScan:
+          pathToScan = ""
+        elif SYSTEM_DRIVE + "\\Windows\\ServiceProfiles" in pathToScan:
+          pathToScan = ""
+        elif SYSTEM_DRIVE + "\\Windows\\System32" in pathToScan:
+          pathToScan = ""
+        elif SYSTEM_DRIVE + "\\Windows\\bootstat.dat" in pathToScan:
+          pathToScan = ""
+        elif XylentScanner.quar.QuarantineDir in pathToScan:
+          pathToScan = ""
+        try:
+            if pathToScan:
+              verdict = XylentScanner.scanFile(pathToScan)
+              XYLENT_SCAN_CACHE.setVal(pathToScan,verdict)
+        except Exception as e:
+          print(e)
+          print(str(action)+" "+file+" ")
+
+      if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
+                XYLENT_SCAN_CACHE.purge()
+                print("Purging")
 
   print("RTP waiting to start...")
