@@ -1,9 +1,16 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation,useNavigate,Link} from "react-router-dom";
 import {useState,useEffect} from "react";
 import {useApiRequest} from './useApiRequest';
 import Store from '../../store';
+
 function Options() {
   const { state } = useLocation();
+  let navigate = useNavigate();
+  const routeChange = (scnTyp) => {
+    console.log(scnTyp);
+    let path = `/scanUI`;
+    navigate(path, { state: { scanType: scnTyp } });
+  }
   const [userPreference, setUserPreference] = useState({})
   var configType;
   var SLICE_START, SLICE_LIMIT;
@@ -83,11 +90,20 @@ function Options() {
               Object.keys(state).map((key, index) => {
                 return (
                   <div key={key}>
-                    <Link className='statBox_height' to="/sserenderer" state={state[key]} tabIndex='-1'>
-                      <div className='statBox flex_col spc_btwn'>
-                        <div>{key}</div>
-                      </div>
-                    </Link>
+                    {state[key].endpoint==="scan"?   
+                      <button id={key} onClick={(e) => routeChange(e.target.id)} className="statBox_height">
+                        <div id={key} className='statBox flex_col spc_btwn'>
+                          <div>{key} Scan</div>
+                          <div className='smallFnt'>{state[key].desc}</div>
+                        </div>
+                      </button>
+                    :
+                      <Link className='statBox_height' to="/sserenderer" state={state[key]} tabIndex='-1'>
+                        <div className='statBox flex_col spc_btwn'>
+                          <div>{key}</div>
+                        </div>
+                      </Link>
+                    }
                   </div>
                 )
               })

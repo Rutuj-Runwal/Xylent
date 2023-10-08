@@ -1,4 +1,4 @@
-const { app, BrowserWindow,ipcMain } = require('electron')
+const { app, BrowserWindow,ipcMain,dialog } = require('electron')
 const path = require('path')
 let win;
 // const userDataPath = app.getPath('userData');
@@ -50,6 +50,9 @@ function createWindow() {
     })
     ipcMain.on('close',() => {
         win.close()
+    });
+    ipcMain.handle('file-picker', (event, params) => {
+        return dialog.showOpenDialog(params);
     });
 }
 

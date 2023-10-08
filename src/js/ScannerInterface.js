@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { ipcRenderer } from 'electron';
 import Store from '../../store';
 import { useApiRequest } from './useApiRequest';
+
 function ScannerInterface() {
     const [scanReport, setscanReport] = useState([]);
     const [currScan, setcurrScan] = useState('Scanning');
@@ -12,16 +13,29 @@ function ScannerInterface() {
     var runScan = async () => {
         // Reset counters
         setskippedFilesCount(0);
+        var customScanFiles = null;
+        var scanReqData = {scanType: state.scanType,customScanFiles:customScanFiles};
+        if(state.scanType==="Custom"){
+            //  Select file picker
+            const dialogConfig = {
+                title: 'Select folders to scan',
+                buttonLabel: 'Scan Selections',
+                properties: ['openDirectory','multiSelections']
+            };
+            customScanFiles = await ipcRenderer.invoke('file-picker', dialogConfig);
+            console.log(customScanFiles);
+            if (customScanFiles) {
+                if (!customScanFiles.canceled) {
+                    scanReqData.customScanFiles = customScanFiles.filePaths;
+                    console.log(scanReqData);
+                }
+            }
+        }
         if (document.getElementById("scanStats")) {
             document.getElementById("scanStats").style.display = "none";
         }
         document.getElementsByClassName("loading")[0].style.display = "block";
-        const requestOptions = {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ scanType: state.scanType })
-        };
-        var data = await useApiRequest('http://127.0.0.1:5000/initiateScans','POST',{scanType:state.scanType},'json')
+        var data = await useApiRequest('http://127.0.0.1:5000/initiateScans', 'POST',scanReqData,'json')
         setscanReport(data);
 
         document.getElementsByClassName("loading")[0].style.display = "none";

@@ -190,6 +190,7 @@ def scans():
     print(SCAN_TYPE)
     # Intialize scanner object
     # https://peps.python.org/pep-0635/
+    SCAN_LOCATIONS = []
     if SCAN_TYPE=="Quick":
         # TODO: Add paths based on the platform, i.e. windows,linux,macos
         AppdataPath = R"C:\Users\$USERNAME\AppData"
@@ -198,20 +199,22 @@ def scans():
         temp = os.path.expandvars(tempPath)
         Appdata = os.path.expandvars(AppdataPath)
         desktop = os.path.expandvars(desktopPath)
-        # REMOVE - TEMP ONLY !!!!!!!!!
-        tPath = R"%UserProfile%\Downloads\Test\TestX"
-        testPath = os.path.expandvars(tPath)
-        scanReport = XylentScanner.scanFolders(location=[testPath])
-        return scanReport
-
+        downloadPath = R"%UserProfile%\Downloads"
+        downloads = os.path.expandvars(downloadPath)
+        SCAN_LOCATIONS = [Appdata,temp]
+        
     elif SCAN_TYPE=="Full":
         # Full Scan
         pass
     elif SCAN_TYPE=="Custom":
         # Custom
-        pass
+        SCAN_LOCATIONS = data['customScanFiles']
     else:
         print("Invalid Scan Type")
+
+    print(SCAN_LOCATIONS)
+    scanReport = XylentScanner.scanFolders(location=SCAN_LOCATIONS)
+    return scanReport
 
 @app.route("/quarFile",methods=['POST'])
 def quarFile():

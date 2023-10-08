@@ -11,12 +11,9 @@ function Sidebar() {
   const location = useLocation();
   const menuOptions = {
     BASE:{
-      Protection: { 'Virus Scans': { link: "/scanChooser", desc: "Run a Quick,Full or Custom Scan" }, "Advanced Scan": { link: 'NA', desc: 'Launch Microsoft MSRT tool to scan the system', programPath: "C:\\Windows\\System32\\MRT.exe" }, 'Firewall++': { link: "/options", desc: "Enhance windows firewall with custom rules", data: { "Apply Antimalware Rules": { endpoint: "addFirewallRules", link: "https://malware-filter.gitlab.io/malware-filter/urlhaus-filter-online.txt" }, "Apply Bot Protection": { endpoint: "addFirewallRules", link: "https://feodotracker.abuse.ch/downloads/ipblocklist.txt" }, "Phishing Protection": { endpoint: "addFirewallRules", link: "https://malware-filter.gitlab.io/malware-filter/phishing-filter.txt" } } }, 'Quarantine': { link: '/manageQuars', desc: 'Manage Quarantine items' } },
+      Protection: { 'Virus Scans': { link: "/options", desc: "Run a Quick,Full or Custom Scan", data:{"Quick":{endpoint:"scan",desc:"Run a quick scan"},"Custom":{endpoint:"scan",desc:"Run a custom scan"}} }, "Advanced Scan": { link: 'NA', desc: 'Launch Microsoft MSRT tool to scan the system', programPath: "C:\\Windows\\System32\\MRT.exe" }, 'Firewall++': { link: "/options", desc: "Enhance windows firewall with custom rules", data: { "Apply Antimalware Rules": { endpoint: "addFirewallRules", link: "https://malware-filter.gitlab.io/malware-filter/urlhaus-filter-online.txt" }, "Apply Bot Protection": { endpoint: "addFirewallRules", link: "https://feodotracker.abuse.ch/downloads/ipblocklist.txt" }, "Phishing Protection": { endpoint: "addFirewallRules", link: "https://malware-filter.gitlab.io/malware-filter/phishing-filter.txt" } } }, 'Quarantine': { link: '/manageQuars', desc: 'Manage Quarantine items' } },
       Performance: { 'Startup Monitor': { link: "/optimize", desc: "Manage Startup Items" }, "Delete Junk Files": { endpoint:"cleanJunk",link:"/sserenderer",desc:"Remove Junk Files"}},
       Privacy: { 'Microphone': { link: 'NA', desc: 'Modify microphone access', commandData: { program: 'Powershell', command: "Start ms-settings:privacy-microphone" } }, 'Camera': { link: 'NA', desc: 'Modify webcam access', commandData: { program: 'Powershell', command: "Start ms-settings:privacy-webcam" }}, 'RRAdblocker': { link: 'NA', externalLink: 'https://rutuj-runwal.github.io/RRAdblocker/', desc: 'Adblocking, Tracker and Malware Protection' } } 
-    },
-    CONFIGS:{
-
     }
   }
   return (
