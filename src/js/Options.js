@@ -91,7 +91,7 @@ function Options() {
                 return (
                   <div key={key}>
                     {state[key].endpoint==="scan"?   
-                      <button id={key} onClick={(e) => routeChange(e.target.id)} className="statBox_height">
+                      <button style = {{ padding: '0px!important', margin: '0px !important', backgroundColor:'inherit'}}  id={key} onClick={(e) => routeChange(e.target.id)} className="statBox_height">
                         <div id={key} className='statBox flex_col spc_btwn'>
                           <div>{key} Scan</div>
                           <div className='smallFnt'>{state[key].desc}</div>

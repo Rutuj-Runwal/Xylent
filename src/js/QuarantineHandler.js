@@ -53,7 +53,7 @@ function QuarantineHandler() {
                     return(
                         <tr key={val}>
                             <td className='quarTable'>{val}</td>
-                            <td>{quarantineData[val]}</td>
+                            <td style={{"wordBreak":"break-all","width":"170px","paddingLeft":"5px","paddingRight":"5px" }}>{quarantineData[val]}</td>
                             <td><button id={val} className='quarHandleBtn' onClick={(e) => handleQuar(e.currentTarget.id, 'restore')}>
                                 <div className='flex_col just_cent'>
                                 <span style={{ 'fontSize': '20px', 'fontWeight': '900' }}>&#10554;</span>
