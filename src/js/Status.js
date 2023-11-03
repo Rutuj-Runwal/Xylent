@@ -11,17 +11,6 @@ function Status() {
     let path = `/scanUI`;
     navigate(path, { state: { scanType: "Quick" } });
   }
-  // ----COSMETIC ONLY----
-  // var nowScanning = () => {
-  //   console.log("here");
-  //   Object.keys(scanReport).forEach((fileName) => {
-  //     if (Object.keys(scanReport).at(-1) == fileName) {
-  //       setchecker(1);
-  //       return;
-  //     }
-  //     setTimeout(() => { setcurrScan(fileName); }, 300);
-  //   });
-  // }
   useEffect(() => {
     ipcRenderer.send('xylent-get-path', "XYLENT_GET_APP_PATH");
     ipcRenderer.once('xylent-get-path', (event, basePath) => {
@@ -93,9 +82,9 @@ function Status() {
           <legend>Previous Scan</legend>
           <div className='flex_col'>
             <div>
-              <p className='just_cent' style={{ 'textAlign': 'center', 'fontSize': '20px', 'margin': '10px' }}><span className='dashboard_stat_count'>X</span><br /><span style={{'fontSize':'15px'}}>Threats Blocked</span></p>
+              <p className='just_cent' style={{ 'textAlign': 'center', 'fontSize': '20px', 'margin': '10px' }}><span className='dashboard_stat_count'>X</span><br /><span style={{'fontSize':'14px'}}>Threats Blocked</span></p>
               <br/>
-              <p className='just_cent' style={{ 'textAlign': 'center', 'fontSize': '20px', 'margin': '10px' }}><span className='dashboard_stat_count'>X</span><br /><span style={{ 'fontSize': '15px' }}>Items Scanned</span></p>
+              <p className='just_cent' style={{ 'textAlign': 'center', 'fontSize': '20px', 'margin': '10px' }}><span className='dashboard_stat_count'>X</span><br /><span style={{ 'fontSize': '14px' }}>Items Scanned</span></p>
             </div>
           </div>
         </fieldset>

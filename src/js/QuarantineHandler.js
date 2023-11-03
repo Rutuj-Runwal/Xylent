@@ -46,7 +46,7 @@ function QuarantineHandler() {
     return (
         <table style={{'display':'grid'}}>
             <tbody>
-                <tr className=''><th>Path</th><th>Detection</th><th>Restore</th><th>Remove</th></tr>
+                {Object.keys(quarantineData).length ? <tr className=''><th>Path</th><th>Detection</th><th>Restore</th><th>Remove</th></tr> : <></>}
             {   
                 Object.keys(quarantineData).length ?
                 Object.keys(quarantineData).slice(previous, next).map((val) => {
@@ -65,15 +65,17 @@ function QuarantineHandler() {
                 })
                 :
                 <tr>
-                    <td><h4>No items in quarantined!</h4></td>
+                    <td><h4>No items in quarantine!</h4><h5>No actions required</h5></td>
                 </tr>
                 
             }
             <br/>
-            <tr>
-                <td><button onClick={prevBtn}>Previous</button></td>
-                <td><button onClick={nextBtn}>Next</button></td>
-            </tr>
+            {Object.keys(quarantineData).length ?
+                <tr>
+                    <td><button onClick={prevBtn}>Previous</button></td>
+                    <td><button onClick={nextBtn}>Next</button></td>
+                </tr>:<></>
+            }
             </tbody>
         </table>
     )

@@ -9,8 +9,7 @@
   <title>Document</title>
   <style>
     body {
-      margin: 0px !important;
-      
+      margin: 0px !important; 
     }
     :root {
       --scaleAt0: 1;
@@ -18,6 +17,8 @@
       --xylentPrimary: #00B01D;
       --xylentPrimaryHue: #00CA21;
       --xylentAlert: #B01D00;
+      --xylentPrimaryDark:#212124;
+      --xylentEmphFontFamily:Consolas, 'Courier New', monospace;
     }
     /* GLOBAL */
     a{
@@ -74,7 +75,9 @@
     }
 
     .statBox_btn{
-      background-color: white;
+      /* background-color: var(--xylentPrimaryDark) !important; */
+      color:white !important;
+      text-align: left;
     }
 
     .smallFnt{
@@ -160,6 +163,12 @@
       padding: 5px;
       font-size: 17px;
     }
+    .mainFrame_Btn{
+      padding:'0px!important';
+      margin:'0px !important';
+      background-color: inherit;
+      color: inherit;
+    }
     .quarHandleBtn{
       width: 100px;
       border-radius: 40px;
@@ -187,10 +196,12 @@
       height: 200px;
       font-size: 14px;
       margin-right: -35px !important;
+      font-family: var(--xylentEmphFontFamily);
     }
     #dashboard_tools{
       width: 280px;
       height: 200px;
+      font-family: var(--xylentEmphFontFamily);
     }
     .dashboard_stat_count{
       color: var(--xylentPrimary);

@@ -15,7 +15,7 @@ function Options() {
   var configType;
   var SLICE_START, SLICE_LIMIT;
   if (state.prevPath) {
-    if (state.prevPath == "/status" || state.prevPath == "/") {
+    if (state.prevPath === "/status" || state.prevPath === "/") {
       // First 5 settings
       SLICE_START = 0;
       SLICE_LIMIT = 5;
@@ -60,12 +60,15 @@ function Options() {
     useApiRequest('http://127.0.0.1:5000/setUserSetting', 'POST', { setting: id, value: checked }).then(data => console.log(data))
   }
   useEffect(() => {
-    var getData = () => {
-      var data = store.getAll();
-      console.log(data);
-      return data
+    console.log(state.prevPath);
+    if (configType==="Protection"||configType==="Performance"||configType==="Privacy"||state.prevPath === "/status"||state.prevPath==="/"){
+      var getData = () => {
+        var data = store.getAll();
+        console.log(data);
+        return data
+      }
+      setUserPreference(getData());
     }
-    setUserPreference(getData())
   },[])
   
 
@@ -91,7 +94,7 @@ function Options() {
                 return (
                   <div key={key}>
                     {state[key].endpoint==="scan"?   
-                      <button style = {{ padding: '0px!important', margin: '0px !important', backgroundColor:'inherit'}}  id={key} onClick={(e) => routeChange(e.target.id)} className="statBox_height">
+                      <button className='statBox_height statBox_btn'  id={key} onClick={(e) => routeChange(e.target.id)}>
                         <div id={key} className='statBox flex_col spc_btwn'>
                           <div>{key} Scan</div>
                           <div className='smallFnt'>{state[key].desc}</div>

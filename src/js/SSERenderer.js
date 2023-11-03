@@ -29,7 +29,7 @@ function SSERenderer() {
             if (done) break;
             setTimeout(() => {
               console.log('Received', value);
-              setData(value)
+              setData(value.split("data:")[1]);
             }, 1000);
         }
         // TODO: Add a modal UI for confirmartion
