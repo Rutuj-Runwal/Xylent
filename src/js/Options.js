@@ -16,19 +16,19 @@ function Options() {
   var SLICE_START, SLICE_LIMIT;
   if (state.prevPath) {
     if (state.prevPath === "/status" || state.prevPath === "/") {
-      // First 5 settings
+      // First 6 settings
       SLICE_START = 0;
-      SLICE_LIMIT = 5;
+      SLICE_LIMIT = 6;
     }
     else{
       configType = state.prevPath.split(":");
       configType = configType[1];
       if(configType=="Protection"){
-          SLICE_START = 5
-          SLICE_LIMIT = SLICE_START + 6
+          SLICE_START = 6
+          SLICE_LIMIT = SLICE_START + 5
       }
       else if(configType=="Performance"){
-        SLICE_START = 10
+        SLICE_START = 11
         SLICE_LIMIT = SLICE_START+2
       }
     }
@@ -42,6 +42,7 @@ function Options() {
       "Notification Duration": 2,
       "Auto check for definition updates": true,
       "Auto check for program updates": true,
+      "Dark Mode":false,
       "Scan PE files": true,
       "Apply additional checks for archives": true,
       "Treat un-signed executables as suspicious": true,
@@ -56,8 +57,22 @@ function Options() {
     console.log(id);
     console.log(checked);
     store.set(id,checked);
-    
-    useApiRequest('http://127.0.0.1:5000/setUserSetting', 'POST', { setting: id, value: checked }).then(data => console.log(data))
+    if(id!="Dark Mode"){
+      useApiRequest('http://127.0.0.1:5000/setUserSetting', 'POST', { setting: id, value: checked }).then(data => console.log(data))
+    }
+
+    // Perform UI Changes if required when a setting is changed
+    var cssVariables = document.querySelector(':root');
+    var compStyles = getComputedStyle(cssVariables);
+    const darkMode = compStyles.getPropertyValue('--xylentPrimaryDark');
+    if (store.get("Dark Mode")) {
+      cssVariables.style.setProperty('--xylentModeUI', darkMode);
+      cssVariables.style.setProperty('--xylentModeText', darkMode);
+      document.body.style.color = "white";
+    } else {
+      cssVariables.style.setProperty('--xylentModeUI', "white");
+      document.body.style.color = "black";
+    }
   }
   useEffect(() => {
     console.log(state.prevPath);

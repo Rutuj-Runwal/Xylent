@@ -22,6 +22,7 @@ function Status() {
           "Notification Duration": 2,
           "Auto check for definition updates": true,
           "Auto check for program updates": true,
+          "Dark Mode":false,
           "Scan PE files": true,
           "Apply additional checks for archives": true,
           "Treat un-signed executables as suspicious": true,
@@ -35,6 +36,7 @@ function Status() {
       var statMsg = document.getElementById('statMsg');
       var cssVariables = document.querySelector(':root');
       var compStyles = getComputedStyle(cssVariables);
+      const darkMode = compStyles.getPropertyValue('--xylentPrimaryDark');
       if(!store.get("Real Time Protection")){
         // Reversing value to create reverse animation
         cssVariables.style.setProperty('--scaleAt0', 1.4);
@@ -46,6 +48,15 @@ function Status() {
         cssVariables.style.setProperty('--scaleAt100', 1.4);
         cssVariables.style.setProperty('--xylentPrimary', '#00B01D');
         statMsg.innerText = "System is Secure"
+      }
+
+      if(store.get("Dark Mode")){
+        cssVariables.style.setProperty('--xylentModeUI', darkMode);
+        cssVariables.style.setProperty('--xylentModeText', darkMode);
+        document.body.style.color = "white";
+      }else{
+        cssVariables.style.setProperty('--xylentModeUI', "white");
+        document.body.style.color = "black";
       }
 
       // Set dashboard statistics
@@ -97,27 +108,27 @@ function Status() {
                 <RiScanLine className='dashboard_tools_icon' size="22"/>
               </Link>
             </div>
-            <div className='dashboard_tools_item flex_row just_cent' style={{ 'marginTop': '50px', 'marginRight': '40px' }}>
-              <Link to="/optimize">
-                <span className='dashboard_tools_info'>Startup<br />Monitor</span>
-                <TbHeartRateMonitor className='dashboard_tools_icon' size="22"/>
-              </Link>
-            </div>
-            <div className='dashboard_tools_item flex_row just_cent' style={{ 'marginTop': '-80px', 'marginRight': '40px' }}>
-              <Link>
-                <span className='dashboard_tools_info'>Junk<br />Cleaner</span>
-                <LuTrash className='dashboard_tools_icon' size="22"/>
-              </Link>
-            </div>
-            <div className='dashboard_tools_item flex_row just_cent' style={{ 'marginTop': '50px' }}>
-              <Link>
-                <span className='dashboard_tools_info'>Update</span>
-                <div className='flex_col'>
-                  <span className='dashboard_tools_icon' style={{ 'fontSize': '20px', 'fontWeight':'900' }}>&#10554;</span>
-                  <span className='dashboard_tools_icon' style={{ 'fontSize': '20px','fontWeight':'900','marginTop':'-10px'}}>&#10555;</span>
-                </div>
-              </Link>
-            </div>
+            <Link to="/optimize">
+              <div className='dashboard_tools_item flex_row just_cent' style={{ 'marginTop': '50px', 'marginRight': '40px' }}>
+                  <span className='dashboard_tools_info'>Startup<br />Monitor</span>
+                  <TbHeartRateMonitor className='dashboard_tools_icon' size="32"/>
+              </div>
+            </Link>
+            <Link>
+              <div className='dashboard_tools_item flex_row just_cent' style={{ 'marginTop': '-80px', 'marginRight': '40px' }}>            
+                  <span className='dashboard_tools_info'>Junk<br />Cleaner</span>
+                  <LuTrash className='dashboard_tools_icon' size="22"/>
+              </div>
+            </Link>
+            <Link>
+              <div className='dashboard_tools_item flex_row just_cent' style={{ 'marginTop': '50px' }}>
+                  <span className='dashboard_tools_info'>Update</span>
+                  <div className='flex_col'>
+                    <span className='dashboard_tools_icon' style={{ 'fontSize': '20px', 'fontWeight':'900' }}>&#10554;</span>
+                    <span className='dashboard_tools_icon' style={{ 'fontSize': '20px','fontWeight':'900','marginTop':'-10px'}}>&#10555;</span>
+                  </div>
+              </div>
+            </Link>
           </div>
         </fieldset>
       </div>
