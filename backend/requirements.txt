@@ -1,0 +1,4 @@
+flask
+notify-py
+pywin32
+yara-python
