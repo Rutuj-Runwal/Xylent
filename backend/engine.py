@@ -22,69 +22,57 @@ for i in range(len(temp)):
     signaturesData[temp[i].split(":")[0]] = temp[i].split(":")[1]
 
 print("Signatures loaded!")
-
 # compile yara rulesets
 def compileYaraSigs():
     import sys
-    if getattr(sys, 'frozen',False):
-            # Current Path - For Frozen executable[prod]
-            BASE_PATH  = "./"
+
+    if getattr(sys, 'frozen', False):
+        # For Frozen executable[prod]
+        BASE_PATH = os.path.dirname(sys.executable)
     else:
-        BASE_PATH = app.root_path
-        
-    print(BASE_PATH)
+        BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+
     yaraRules = ""
-    dummy = ""
     rule_count = 0
-    # for yara_rule_directory in self.yara_rule_directories:
-    yara_rule_directory = os.path.join(
-        BASE_PATH, "signature-base/yara".replace("/", os.sep))
+
+    yara_rule_directory = os.path.join(BASE_PATH, "signature-base/yara")
+    compiled_rules_path = os.path.join(BASE_PATH, "compiledRules")
+
     if not os.path.exists(yara_rule_directory):
         return "Cannot find signature base"
-    if not os.path.exists(BASE_PATH+'/compiledRules'):
+
+    try:
         for root, directories, files in os.walk(yara_rule_directory, followlinks=False):
             for file in files:
                 try:
                     # Full Path
-                    yaraRuleFile = os.path.join(root, file)
+                    yara_rule_file = os.path.join(root, file)
 
-                    # Skip hidden, backup or system related files
-                    if file.startswith(".") or file.startswith("~") or file.startswith("_"):
-                        continue
-
-                    # Extension
-                    extension = os.path.splitext(file)[1].lower()
-
-                    # Skip all files that don't have *.yar or *.yara extensions
-                    if extension != ".yar" and extension != ".yara":
-                        continue
-
-                    with open(yaraRuleFile, 'r') as yfile:
+                    with open(yara_rule_file, 'r', encoding='latin-1') as yfile:
                         yara_rule_data = yfile.read()
 
                     # Add the rule
-                    rule_count = rule_count+1
-                    yaraRules += yara_rule_data
+                    rule_count += 1
+                    yaraRules += yara_rule_data + '\n'  # Add a newline between rules
 
                 except Exception as e:
-                    print("Error reading signature file %s" % (yaraRuleFile))
-        try:
-            compiledRules = yara.compile(source=yaraRules, externals={
-                'filename': dummy,
-                'filepath': dummy,
-                'extension': dummy,
-                'filetype': dummy,
-                'md5': dummy,
-                'owner': dummy,
-            })
-            compiledRules.save(BASE_PATH+"/compiledRules")
-            print("Initialized %d Yara rules" % rule_count)
-            return "Initialized" + rule_count +" Yara rules"
-        except Exception as e:
-            return "Error during YARA rule compilation ERROR: - please fix the issue in the rule set"
+                    print("Error reading signature file %s" % (yara_rule_file))
+
+        if not os.path.exists(compiled_rules_path):
+            os.makedirs(compiled_rules_path)
+
+        compiled_rules_file = os.path.join(compiled_rules_path, "compiledRules")
+        with open(compiled_rules_file, 'w', encoding='latin-1') as f:
+            f.write(yaraRules)
+
+        compiledRules = yara.compile(filepath=compiled_rules_file)
+
+        print("Initialized %d Yara rules" % rule_count)
+        return "Initialized " + str(rule_count) + " Yara rules"
+    except Exception as e:
+        return "Error during YARA rule compilation ERROR: - please fix the issue in the rule set"
 with app.app_context():
     compileYaraSigs()
-
 XylentScanner = Scanner(signatures=signaturesData, rootPath=app.root_path)
 
 
@@ -117,7 +105,7 @@ def setUserSetting():
 @app.route("/getActiveProcesses",methods=['GET'])
 def activeProcess():
     import subprocess
-    cmd = r'powershell "gps | where {$_.MainWindowTitle } | select ProcessName,Description,Id,Path'
+    cmd = 'powershell "gps | where {$_.MainWindowTitle } | select ProcessName,Description,Id,Path'
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     ans = []
     for line in proc.stdout:
@@ -131,7 +119,7 @@ def startupItems():
     import subprocess
     # cmd = 'wmic startup list brief'
     # cmd = "reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Run"
-    cmd = r"reg query HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
+    cmd = "reg query HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     data = []
     for line in proc.stdout:
@@ -260,7 +248,7 @@ def addFirewallRules(url):
                     rule = "netsh advfirewall firewall add rule name='XYLENT_AV_IP_RULE' Dir=Out Action=Block RemoteIP="+ip.rstrip()
                     # print(rule)
                     process = subprocess.run(
-                        ['Powershell', '-Command', rule], stdout=subprocess.PIPE, encoding='utf-8')
+                        ['Powershell', '-Command', rule], stdout=subprocess.PIPE, encoding='latin-1')
                     realtime_output = process.stdout
                     if realtime_output == '' and process.poll() is not None:
                         break
@@ -282,8 +270,8 @@ def cleanJunk():
     import time
     import shutil
     localTempPath = R"${TEMP}"
-    windowsTempPath = SYSTEM_DRIVE + r"\Windows\Temp"
-    prefetchPath = SYSTEM_DRIVE + r"\Windows\Prefetch"
+    windowsTempPath = SYSTEM_DRIVE+"\Windows\Temp"
+    prefetchPath = SYSTEM_DRIVE+"\Windows\Prefetch"
     now = time.time()
     size = 0
     root = [prefetchPath, os.path.expandvars(localTempPath), windowsTempPath]
