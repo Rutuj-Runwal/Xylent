@@ -23,7 +23,7 @@ class Scanner:
             while not os.path.exists(self.__rootPath+"/compiledRules"):
                 print("Waiting for resources to compile...")
             # Initialize yara rules
-            self.peid_rules = yara.load(self.__rootPath+"/compiledRules")
+            self.peid_rules = yara.compile(filepath=self.__rootPath+"/compiledRules")
         except Exception as e:
             print(e)
         print("-----Scanner Initialized-----")
