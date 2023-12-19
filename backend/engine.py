@@ -117,7 +117,7 @@ def setUserSetting():
 @app.route("/getActiveProcesses",methods=['GET'])
 def activeProcess():
     import subprocess
-    cmd = 'powershell "gps | where {$_.MainWindowTitle } | select ProcessName,Description,Id,Path'
+    cmd = r'powershell "gps | where {$_.MainWindowTitle } | select ProcessName,Description,Id,Path'
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     ans = []
     for line in proc.stdout:
@@ -131,7 +131,7 @@ def startupItems():
     import subprocess
     # cmd = 'wmic startup list brief'
     # cmd = "reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Run"
-    cmd = "reg query HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
+    cmd = r"reg query HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     data = []
     for line in proc.stdout:
@@ -282,8 +282,8 @@ def cleanJunk():
     import time
     import shutil
     localTempPath = R"${TEMP}"
-    windowsTempPath = SYSTEM_DRIVE+"\Windows\Temp"
-    prefetchPath = SYSTEM_DRIVE+"\Windows\Prefetch"
+    windowsTempPath = SYSTEM_DRIVE + r"\Windows\Temp"
+    prefetchPath = SYSTEM_DRIVE + r"\Windows\Prefetch"
     now = time.time()
     size = 0
     root = [prefetchPath, os.path.expandvars(localTempPath), windowsTempPath]
