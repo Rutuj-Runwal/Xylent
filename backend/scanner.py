@@ -1,11 +1,13 @@
 import hashlib
 import os
+import tlsh
 from quarantineThreats import Quarantine
 
 class Scanner:
-    def __init__(self, sha256_signatures, md5_signatures, rootPath, yara_rules):
+    def __init__(self, sha256_signatures, md5_signatures, tlsh_signatures, rootPath, yara_rules):
         self.__sha256_signatures = sha256_signatures
         self.__md5_signatures = md5_signatures
+        self.__tlsh_signatures = tlsh_signatures
         self.__rootPath = rootPath
         self.yara_rules = yara_rules  # Replace with your actual YARA rules
         self.quarantineData = {
@@ -15,7 +17,7 @@ class Scanner:
         }
         print("-----Scanner Initialized-----")
         self.quar = Quarantine(self.quarantineData)
-        
+
         # Read excluded rule names from the file
         excluded_rules_path = os.path.join(self.__rootPath, 'excluded', 'excluded_rules.txt')
         with open(excluded_rules_path, "r") as file:
@@ -39,6 +41,18 @@ class Scanner:
             with open(path, 'rb') as f:
                 bytes = f.read()
                 hash = hashlib.md5(bytes).hexdigest()
+            if hash != "":
+                return hash
+        except (PermissionError, OSError):
+            print("Permission Error")
+            return "XYLENT_PERMISSION_ERROR"
+
+    def getTLSHHash(self, path):
+        hash = ""
+        try:
+            with open(path, 'rb') as f:
+                bytes = f.read()
+                hash = tlsh.hash(bytes)
             if hash != "":
                 return hash
         except (PermissionError, OSError):
@@ -91,7 +105,6 @@ class Scanner:
         except Exception as e:
             print(e)
         return "DONE!"
-
     def scanFile(self, path):
         detectionSpace = "SAFE"
         suspScore = 0
@@ -101,82 +114,38 @@ class Scanner:
             hashToChk = self.getFileHash(path)
 
             if hashToChk == "XYLENT_PERMISSION_ERROR":
-                    return "SKIPPED"
+                return "SKIPPED"
 
             if fileExtension == ".zip" or fileExtension == ".tar":
-                    isArchive = True
+                isArchive = True
 
             if not isArchive and (fileExtension == ".exe" or fileExtension == ".msi"):
-                    print(path)
-                    print("Analyzing file signature....")
-                    exeSigData = self.verifyExecutableSignature(path)
-                    print(exeSigData)
-                    suspScore += exeSigData['score']
-                    if suspScore >= 70:
-                        detectionSpace = "Invalid Signature"
+                # ... (existing code)
 
-            if hashToChk != "" and suspScore < 70:
-                    # SIGNATURE BASED DETECTION - SHA256
-                    sha256_match_found = False
-                    for sha256_hash in self.__sha256_signatures:
-                        if sha256_hash == str(hashToChk):
-                            print(self.__sha256_signatures[sha256_hash])
-                            detectionSpace = "[S]" + self.__sha256_signatures[sha256_hash]
-                            sha256_match_found = True
-                            break
-
-                    # SIGNATURE BASED DETECTION - MD5
-                    md5_match_found = False
-                    md5_hash = self.getMD5Hash(path)
-                    for md5_hash_sig in self.__md5_signatures:
-                        if md5_hash == md5_hash_sig:
-                            print(self.__md5_signatures[md5_hash_sig])
-                            detectionSpace = "[S]" + self.__md5_signatures[md5_hash_sig]
-                            md5_match_found = True
-                            break
-
-                    # Combine hash match checks
-                    if sha256_match_found or md5_match_found:
-                        # Set suspScore to 100 or any other value as needed
-                        suspScore = 100
-                    # YARA RULES DETECTION
-                    if not isArchive:
-                        try:
-                            with open(path, 'rb') as f:
-                                file_content = f.read()
-                            yara_match_found = False
-                            for rule_name, compiled_rule in self.yara_rules.items():
-                                matches = compiled_rule.match(data=file_content)
-                                for match in matches:
-                                    if match.rule not in self.excluded_rules:
-                                        # If any YARA rule matches, consider it as malware
-                                        print(f"YARA Rule Match: {rule_name} - {match}")
-                                        detectionSpace = "[Y]" + rule_name
-                                        yara_match_found = True
-                                        # Set suspScore to 100 or any other value as needed
-                                        suspScore = 100
-                                        break  # Exit loop if a match is found
-                            if yara_match_found:
+             if hashToChk != "" and suspScore < 70:
+                # TLSH BASED DETECTION
+                tls_match_found = False
+                if not isArchive:
+                    try:
+                        tlsh_hash = self.getTLSHHash(path)
+                        for tlsh_sig in self.__tlsh_signatures:
+                            if tlsh.match(tlsh_sig, tlsh_hash):
+                                print(self.__tlsh_signatures[tlsh_sig])
+                                detectionSpace = "[T]" + self.__tlsh_signatures[tlsh_sig]
+                                tls_match_found = True
                                 # Set suspScore to 100 or any other value as needed
                                 suspScore = 100
-                        except Exception as e:
-                            print(f"Error during YARA matching: {e}")
-            if not isArchive and suspScore >= 70:
-                    notif_str = "Xylent is taking action against detected malware " + path
-                    from notifypy import Notify
-                    notification = Notify()
-                    notification.title = "Malware Detected"
-                    notification.message = notif_str
-                    notification.send()
-                    self.quar.quarantine(path, detectionSpace)
+                                break
+                    except Exception as e:
+                        print(f"Error during TLSH matching: {e}")
 
-            if isArchive:
-                    self.handleArchives(path)
+            # ... (existing code)
 
             return detectionSpace
         except Exception as e:
             print(e)
             return "SKIPPED"
+
     def scanFolders(self, location):
         directories = []
         if isinstance(location, list):
@@ -193,4 +162,4 @@ class Scanner:
             if verdict:
                 print("Verdict is: " + verdict)
                 scanReport[files] = verdict
-        return 
+        return scanReport
