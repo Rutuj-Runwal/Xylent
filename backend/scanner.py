@@ -116,7 +116,7 @@ class Scanner:
             print(e)
         return "DONE!"
 
-    def scanFile(self, path,TNULL):
+    def scanFile(self, path):
         detectionSpace = "SAFE"
         suspScore = 0
         isArchive = False
