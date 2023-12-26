@@ -34,9 +34,8 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         if pressed:
             path_to_scan = get_file_path_from_click(x, y)
             print(f"Mouse clicked at ({x}, {y}) on file: {path_to_scan}")
-
-            # Add file to the queue for processing in the main thread
-            file_queue.put(path_to_scan)
+        result = XylentScanner.scanFile(path_to_scan)
+        results_queue.put(result)  # Put the result in the queue
 
     def get_file_path_from_click(x, y):
         hwnd = win32gui.WindowFromPoint((x, y))
@@ -44,24 +43,14 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
         return win32process.GetModuleFileNameEx(handle, 0)
 
-    def check_administrator_privileges(process_info):
-        try:
-            if process_info and any("requireAdministrator" in arg.lower() for arg in process_info.get("cmdline", [])):
-                print(f"Application requesting administrator privileges: {process_info.get('exe')}")
-                # Add your logic here to handle or log this event
-        except Exception as e:
-            print(f"Error checking administrator privileges: {e}")
-
     def process_file_queue():
         while thread_resume.is_set():
             try:
-                path_to_scan = file_queue.get(timeout=1)  # Timeout to avoid blocking indefinitely
+                path_to_scan = file_queue.get(timeout=0.01)  # Timeout to avoid blocking indefinitely
                 print(f"Processing file: {path_to_scan}")
 
                 try:
                     if os.path.isfile(path_to_scan):
-                        process_info = get_parent_process_info(path_to_scan)
-                        check_administrator_privileges(process_info)  # Check for administrator privileges
                         verdict = XylentScanner.scanFile(path_to_scan)
                         XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
                         results_queue.put(verdict)  # Put the result in the queue
@@ -110,21 +99,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             for action, file in results:
                 path_to_scan = os.path.join(path_to_watch, file)
                 print(path_to_scan)  # Print the path for debugging purposes
+                result = XylentScanner.scanFile(path_to_scan)
+                results_queue.put(result)  # Put the result in the queue
 
-                # Add file to the queue for processing in the main thread
-                file_queue.put(path_to_scan)
-
-                # Check if the file is an executable and if it requires administrator privileges
-                try:
-                    if os.path.isfile(path_to_scan):
-                        process_info = get_parent_process_info(path_to_scan)
-                        check_administrator_privileges(process_info)
-                except Exception as e:
-                    print(f"Error checking administrator privileges: {e}")
-
-            if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
-                XYLENT_SCAN_CACHE.purge()
-                print("Purging")
 
     def watch_processes():
         global printed_processes
@@ -139,9 +116,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
         # Load new processes using ParseJson
         new_processes = load_new_processes()
-
-        # Initialize a queue to collect results
-        results_queue = Queue()
 
         # Initialize previous_list
         previous_list = initial_processes
@@ -243,6 +217,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         path_to_scan = exe
         result = XylentScanner.scanFile(path_to_scan)
         results_queue.put(result)  # Put the result in the queue
+
     def get_parent_process_info(file_path):
         try:
             process = psutil.Process(os.getpid())
