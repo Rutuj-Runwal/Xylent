@@ -46,7 +46,6 @@ class Scanner:
         except (PermissionError, OSError):
             print("Permission Error")
             return "XYLENT_PERMISSION_ERROR"
-
     def getTLSHHash(self, path):
       try:
         with open(path, 'rb') as f:
@@ -58,17 +57,14 @@ class Scanner:
                 return None  # or handle this case as needed
 
             if file_size < 256:
-                TNULL = True
-                print("File size is less than 256 bytes. Setting TNULL to True.")
-            else:
-                TNULL = False
+                print("File size is less than 256 bytes. Skipping TLSH hash calculation.")
+                return None  # or handle this case as needed
 
             hash = tlsh.hash(bytes)
-            return hash, TNULL
+            return hash
       except (PermissionError, OSError):
         print("Permission Error or OS Error. Skipping.")
-        return None, None  # or handle this case as needed
-
+        return None  # or handle this case as needed
     def verifyExecutableSignature(self, path):
         import subprocess
         import time
