@@ -16,9 +16,10 @@ SYSTEM_DRIVE  =  os.path.expandvars("%systemdrive%")
 # Load in SHA256 signatures
 SHA256_PATH = "./rules/sha256_db.txt"
 MD5_PATH = "./rules/md5_db.txt"
-
+TLSH_PATH = "./rules/tlsh_db.txt"
 sha256_signatures_data = {}
 md5_signatures_data = {}
+tlsh_signatures_data = {}
 # Global variable to store compiled YARA rules
 compiled_rules = {}
 # Load SHA256 signatures
@@ -35,7 +36,13 @@ with open(MD5_PATH, 'r') as f:
 
 for i in range(len(temp)):
     md5_signatures_data[temp[i].split(":")[0]] = ""  # Set the value to an empty string, as there is no additional information
+#Load TLSH signatures
+with open(TLSH_PATH, 'r') as f:
+    temp = f.read().split("\n")
+    f.close()
 
+for i in range(len(temp)):
+    tlsh_signatures_data[temp[i].split(":")[0]] = ""  # Set the value to an empty string, as there is no additional information
 print("Hash Signatures loaded!")
 
 yara_folder_path = "signature-base/yara"
@@ -101,7 +108,7 @@ load_yara_rules_in_thread()
 with app.app_context():
     yara_rules = compiled_rules
 # Create the Scanner instance with Yara rules
-XylentScanner = Scanner(sha256_signatures=sha256_signatures_data, md5_signatures=md5_signatures_data, yara_rules=yara_rules, rootPath=app.root_path)
+XylentScanner = Scanner(sha256_signatures=sha256_signatures_data, md5_signatures=md5_signatures_data, tlsh_signatures=tlsh_signatures_data, yara_rules=yara_rules, rootPath=app.root_path)
 def startSystemWatcher(thread_resume):
     thread_resume.set()
     with ThreadPoolExecutor(max_workers=10) as executor:
