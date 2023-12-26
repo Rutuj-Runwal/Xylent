@@ -186,9 +186,13 @@ class Scanner:
                         print(f"Error scanning {path} with YARA rules: {e}")
 
             if not isArchive and suspScore >= 70:
-                notif_str = "Xylent is taking action against detected malware " + path
-                self.quar.quarantine(path, detectionSpace)
-
+                    notif_str = "Xylent is taking action against detected malware " + path
+                    from notifypy import Notify
+                    notification = Notify()
+                    notification.title = "Malware Detected"
+                    notification.message = notif_str
+                    notification.send()
+                    self.quar.quarantine(path, detectionSpace)
             if isArchive:
                 self.handleArchives(path)
 
@@ -196,16 +200,21 @@ class Scanner:
         except Exception as e:
             print(f"Error scanning {path}: {e}")
             return "SKIPPED"
-
+        
     def scanFolders(self, location):
-        try:
-            verdicts = []
-            for foldername, subfolders, filenames in os.walk(location):
-                for filename in filenames:
-                    path = os.path.join(foldername, filename)
-                    result = self.scanFile(path)
-                    verdicts.append(result)
-            return verdicts
-        except Exception as e:
-            print(f"Error scanning folder {location}: {e}")
-            return []
+        directories = []
+        if isinstance(location, list):
+            for target in location:
+                for (dirpath, dirnames, filenames) in os.walk(target):
+                    directories += [os.path.join(dirpath, file) for file in filenames]
+        elif isinstance(location, str):
+            for (dirpath, dirnames, filenames) in os.walk(location):
+                directories += [os.path.join(dirpath, file) for file in filenames]
+
+        scanReport = {}
+        for files in directories:
+            verdict = self.scanFile(files)
+            if verdict:
+                print("Verdict is: " + verdict)
+                scanReport[files] = verdict
+        return 
