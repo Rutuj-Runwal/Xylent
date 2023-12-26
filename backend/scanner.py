@@ -48,17 +48,26 @@ class Scanner:
             return "XYLENT_PERMISSION_ERROR"
 
     def getTLSHHash(self, path):
-        try:
-            with open(path, 'rb') as f:
-                bytes = f.read()
-                if not bytes:
-                    print("File is empty.")
-                    return None  # or handle this case as needed
-                hash = tlsh.hash(bytes)
-                return hash
-        except (PermissionError, OSError):
-            print("Permission Error or OS Error")
-            return None  # or handle this case as needed
+      try:
+        with open(path, 'rb') as f:
+            bytes = f.read()
+            file_size = os.path.getsize(path)
+
+            if not bytes:
+                print("File is empty. Skipping.")
+                return None  # or handle this case as needed
+
+            if file_size < 256:
+                TNULL = True
+                print("File size is less than 256 bytes. Setting TNULL to True.")
+            else:
+                TNULL = False
+
+            hash = tlsh.hash(bytes)
+            return hash, TNULL
+      except (PermissionError, OSError):
+        print("Permission Error or OS Error. Skipping.")
+        return None, None  # or handle this case as needed
 
     def verifyExecutableSignature(self, path):
         import subprocess
@@ -107,7 +116,7 @@ class Scanner:
             print(e)
         return "DONE!"
 
-    def scanFile(self, path):
+    def scanFile(self, path,TNULL):
         detectionSpace = "SAFE"
         suspScore = 0
         isArchive = False
@@ -157,12 +166,14 @@ class Scanner:
 
                 # TLSH BASED DETECTION
                 tlsh_match_found = False
-                tlsh_hash = self.getTLSHHash(path)
-                for tlsh_sig in self.__tlsh_signatures:
+                tlsh_hash, TNULL = self.getTLSHHash(path)
+                if not TNULL:
+                 for tlsh_sig in self.__tlsh_signatures:
                         similarity = tlsh.diff(tlsh_hash, tlsh_sig)
                         if similarity <= 0.8:
                             detectionSpace = "[S]"  # TLSH match
                             tlsh_match_found = True
+                            print(f"Malware detected using TLSH! Signature: {tlsh_sig}, Similarity: {similarity}")
                             break
 
                 if tlsh_match_found:
