@@ -4,7 +4,7 @@ from flask import request,Flask,Response
 from scanner import Scanner
 from suspiciousWPDetector import SuspiciousWPDetector
 from systemWatcher import systemWatcher
-from systemWatcher import new_main_program
+from systemWatcher import watch_processes
 import concurrent.futures 
 from concurrent.futures import ThreadPoolExecutor
 import threading
@@ -116,7 +116,7 @@ realTime_thread.start()
 # Use ThreadPoolExecutor to execute new_main_program in a separate thread
 with concurrent.futures.ThreadPoolExecutor() as executor:
     # Submit new_main_program for execution
-    future = executor.submit(new_main_program(XylentScanner))
+    future = executor.submit(watch_processes(XylentScanner))
 
 @app.route("/setUserSetting",methods=['POST'])
 def setUserSetting():
