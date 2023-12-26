@@ -3,7 +3,6 @@ import win32file
 import win32con
 import win32gui
 import win32api
-import win32evtlog
 import win32process
 import pynput.mouse
 import threading
@@ -63,12 +62,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     if os.path.isfile(path_to_scan):
                         process_info = get_parent_process_info(path_to_scan)
                         check_administrator_privileges(process_info)  # Check for administrator privileges
-
-                        # Only scan the file if it requires administrator privileges
-                        if process_info and "requireAdministrator" in process_info.get("cmdline", "").lower():
-                            verdict = XylentScanner.scanFile(path_to_scan)
-                            XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
-                            results_queue.put(verdict)  # Put the result in the queue
+                        verdict = XylentScanner.scanFile(path_to_scan)
+                        XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+                        results_queue.put(verdict)  # Put the result in the queue
                 except Exception as e:
                     print(e)
                     print(f"Error scanning {path_to_scan}")
