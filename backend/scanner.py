@@ -1,6 +1,5 @@
 import hashlib
 import os
-import yara
 import tlsh
 from quarantineThreats import Quarantine
 
@@ -18,7 +17,7 @@ class Scanner:
         }
         print("-----Scanner Initialized-----")
         self.quar = Quarantine(self.quarantineData)
-        
+
         # Read excluded rule names from the file
         excluded_rules_path = os.path.join(self.__rootPath, 'excluded', 'excluded_rules.txt')
         with open(excluded_rules_path, "r") as file:
@@ -52,11 +51,14 @@ class Scanner:
         try:
             with open(path, 'rb') as f:
                 bytes = f.read()
+                if not bytes:
+                    print("File is empty.")
+                    return None  # or handle this case as needed
                 hash = tlsh.hash(bytes)
                 return hash
         except (PermissionError, OSError):
-            print("Permission Error")
-            return "XYLENT_PERMISSION_ERROR"
+            print("Permission Error or OS Error")
+            return None  # or handle this case as needed
 
     def verifyExecutableSignature(self, path):
         import subprocess
@@ -90,7 +92,7 @@ class Scanner:
                     os.mkdir(archiveExtractPath)
                 shutil.unpack_archive(path, archiveExtractPath)
                 verdicts = self.scanFolders(archiveExtractPath)
-                if "[S]" or "[Y]" in verdicts:
+                if "[S]" in verdicts or "[Y]" in verdicts:
                     if os.path.exists(archiveExtractPath):
                         print("Malware detected in archive")
                         from notifypy import Notify
@@ -111,13 +113,13 @@ class Scanner:
         isArchive = False
         try:
             fileExtension = os.path.splitext(path)[1]
-            hashToCheck = self.getFileHash(path)
+            hashToChk = self.getFileHash(path)
 
-            if hashToCheck == "XYLENT_PERMISSION_ERROR":
-                return "SKIPPED"
+            if hashToChk == "XYLENT_PERMISSION_ERROR":
+                    return "SKIPPED"
 
             if fileExtension == ".zip" or fileExtension == ".tar":
-                isArchive = True
+                    isArchive = True
 
             if not isArchive and (fileExtension == ".exe" or fileExtension == ".msi"):
                 print(path)
@@ -128,11 +130,11 @@ class Scanner:
                 if suspScore >= 70:
                     detectionSpace = "Invalid Signature"
 
-            if hashToCheck != "" and suspScore < 70:
+            if hashToChk != "" and suspScore < 70:
                 # SIGNATURE BASED DETECTION - SHA256
                 sha256_match_found = False
                 for sha256_hash in self.__sha256_signatures:
-                    if sha256_hash == str(hashToCheck):
+                    if sha256_hash == str(hashToChk):
                         print(self.__sha256_signatures[sha256_hash])
                         detectionSpace = "[S]" + self.__sha256_signatures[sha256_hash]
                         sha256_match_found = True
@@ -153,15 +155,18 @@ class Scanner:
                     # Set suspScore to 100 or any other value as needed
                     suspScore = 100
 
-                # TLSh BASED DETECTION
-                if not isArchive:
-                    tlsh_hash = self.getTLSHHash(path)
-                    for tlsh_sig in self.__tlsh_signatures:
+                # TLSH BASED DETECTION
+                tlsh_match_found = False
+                tlsh_hash = self.getTLSHHash(path)
+                for tlsh_sig in self.__tlsh_signatures:
                         similarity = tlsh.diff(tlsh_hash, tlsh_sig)
-                        if similarity >= 0.8:
-                            detectionSpace = "[S]"  # TLSh match
-                            suspScore = 100
+                        if similarity <= 0.8:
+                            detectionSpace = "[S]"  # TLSH match
+                            tlsh_match_found = True
                             break
+
+                if tlsh_match_found:
+                    suspScore = 100
 
                 # YARA RULES DETECTION
                 if not isArchive:
@@ -181,7 +186,6 @@ class Scanner:
                             if yara_match_found:
                                 # Set suspScore to 100 or any other value as needed
                                     suspScore = 100
-                            break  # Break if YARA match found
                     except Exception as e:
                         print(f"Error scanning {path} with YARA rules: {e}")
 
