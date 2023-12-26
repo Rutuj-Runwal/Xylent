@@ -107,7 +107,7 @@ https://github.com/Rutuj-Runwal/Xylent/assets/59436520/99a0af23-0e1e-4f5e-abcc-c
     - Finally `npm start` to run the app
  
  ### Target Environment
- - Currently in development with main focus towards Windows [64x] systems
+ - Currently in development with main focus towards Windows 64x systems
  - Requires Administrator privilages for certain features
  - Extending capabilites towards Linux at a later stage
 
