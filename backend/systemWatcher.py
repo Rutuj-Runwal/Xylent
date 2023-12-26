@@ -10,7 +10,6 @@ import queue
 from queue import Queue
 import psutil
 import concurrent.futures
-import time
 from parseJson import ParseJson
 
 FILE_ACTION_ADDED = 0x00000001
@@ -42,28 +41,28 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         pid = win32process.GetWindowThreadProcessId(hwnd)[1]
         handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
         return win32process.GetModuleFileNameEx(handle, 0)
-
     def process_file_queue():
-        while thread_resume.is_set():
+     while thread_resume.is_set():
+        try:
+            path_to_scan = file_queue.get(timeout=0.1)  # Timeout to avoid blocking indefinitely
+            print(f"Processing file: {path_to_scan}")
+
             try:
-                path_to_scan = file_queue.get(timeout=0.01)  # Timeout to avoid blocking indefinitely
-                print(f"Processing file: {path_to_scan}")
+                if os.path.isfile(path_to_scan):
+                    verdict = XylentScanner.scanFile(path_to_scan)
+                    XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+                    results_queue.put(verdict)  # Put the result in the queue
+                    print(f"Scanned and cached: {path_to_scan}")
+            except Exception as e:
+                print(e)
+                print(f"Error scanning {path_to_scan}")
 
-                try:
-                    if os.path.isfile(path_to_scan):
-                        verdict = XylentScanner.scanFile(path_to_scan)
-                        XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
-                        results_queue.put(verdict)  # Put the result in the queue
-                except Exception as e:
-                    print(e)
-                    print(f"Error scanning {path_to_scan}")
+        except queue.Empty:
+            pass  # Queue is empty, continue checking
 
-            except queue.Empty:
-                pass  # Queue is empty, continue checking
-
-            if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
-                XYLENT_SCAN_CACHE.purge()
-                print("Purging")
+        if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
+            XYLENT_SCAN_CACHE.purge()
+            print("Purging")
 
     def file_monitor():
         while thread_resume.is_set():
