@@ -173,10 +173,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
                 # Save the updated new processes list to the file using ParseJson
                 save_new_processes(list(new_processes))
-
-                # Additional print statement to check the loop
-                print("Waiting for a short period before checking again...")
-                time.sleep(0.1)
             except Exception as e:
                 print(f"Error in watch_processes: {e}")
 
@@ -243,7 +239,10 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     for path in paths:
                         result = XylentScanner.scanFile(path)
                         results_queue.put(result)  # Put the result in the queue
-
+        # Include the running file itself in the path_to_scan
+        path_to_scan = exe
+        result = XylentScanner.scanFile(path_to_scan)
+        results_queue.put(result)  # Put the result in the queue
     def get_parent_process_info(file_path):
         try:
             process = psutil.Process(os.getpid())
