@@ -173,13 +173,15 @@ class Scanner:
                             matches = compiled_rule.match(data=file_content)
                             for match in matches:
                                 if match.rule not in self.excluded_rules:
+                                    # If any YARA rule matches, consider it as malware
+                                    print(f"YARA Rule Match: {rule_name} - {match}")
                                     detectionSpace = "[Y]" + rule_name
                                     yara_match_found = True
-                                    # Set suspScore to 100 or any other value as needed
-                                    suspScore = 100
                                     break  # Break on first match
                             if yara_match_found:
-                                break  # Break if YARA match found
+                                # Set suspScore to 100 or any other value as needed
+                                    suspScore = 100
+                            break  # Break if YARA match found
                     except Exception as e:
                         print(f"Error scanning {path} with YARA rules: {e}")
 
