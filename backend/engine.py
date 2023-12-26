@@ -4,99 +4,119 @@ from flask import request,Flask,Response
 from scanner import Scanner
 from suspiciousWPDetector import SuspiciousWPDetector
 from systemWatcher import systemWatcher
+from systemWatcher import new_main_program
+import concurrent.futures 
+from concurrent.futures import ThreadPoolExecutor
 import threading
-# Compile to executable with: pyinstaller -F engine.py --hidden-import pywin32 --hidden-import notify-py --uac-admin
+
+# Compile ato executable with: pyinstaller -F engine.py --hidden-import pywin32 --hidden-import notify-py --uac-admin
 app = Flask(__name__)
 
 # Global Variables
 SYSTEM_DRIVE  =  os.path.expandvars("%systemdrive%")
-
-
 # Load in SHA256 signatures
-PATH = "./rules/sha256_db.txt"
-signaturesData = {}
-with open(PATH,'r') as f:
+SHA256_PATH = "./rules/sha256_db.txt"
+MD5_PATH = "./rules/md5_db.txt"
+
+sha256_signatures_data = {}
+md5_signatures_data = {}
+# Global variable to store compiled YARA rules
+compiled_rules = {}
+# Load SHA256 signatures
+with open(SHA256_PATH, 'r') as f:
     temp = f.read().split("\n")
     f.close()
+
 for i in range(len(temp)):
-    signaturesData[temp[i].split(":")[0]] = temp[i].split(":")[1]
+    sha256_signatures_data[temp[i].split(":")[0]] = temp[i].split(":")[1]
+# Load MD5 signatures
+with open(MD5_PATH, 'r') as f:
+    temp = f.read().split("\n")
+    f.close()
 
-print("Signatures loaded!")
-# compile yara rulesets
-def compileYaraSigs():
-    import sys
+for i in range(len(temp)):
+    md5_signatures_data[temp[i].split(":")[0]] = ""  # Set the value to an empty string, as there is no additional information
 
-    if getattr(sys, 'frozen', False):
-        # For Frozen executable[prod]
-        BASE_PATH = os.path.dirname(sys.executable)
-    else:
-        BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+print("Hash Signatures loaded!")
 
-    yaraRules = ""
-    rule_count = 0
+yara_folder_path = "signature-base/yara"
+compiled_rules = {}
 
-    yara_rule_directory = os.path.join(BASE_PATH, "signature-base/yara")
-    compiled_rules_path = os.path.join(BASE_PATH, "compiledRules")
-
-    print("Base Path:", BASE_PATH)
-
-    if not os.path.exists(yara_rule_directory):
-        return "Cannot find signature base"
-
+def compile_yara_rule(rule_file):
     try:
-        for root, directories, files in os.walk(yara_rule_directory, followlinks=False):
-            for file in files:
-                try:
-                    # Full Path
-                    yara_rule_file = os.path.join(root, file)
+        return yara.compile(filepath=rule_file)
+    except yara.Error as e:
+        print(f"Error compiling YARA rule from {rule_file}: {e}")
+        return None
 
-                    with open(yara_rule_file, 'r', encoding='latin-1') as yfile:
-                        yara_rule_data = yfile.read()
+def load_yara_rules(folder_path):
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
-                    # Add the rule
-                    rule_count += 1
-                    yaraRules += yara_rule_data + '\n'  # Add a newline between rules
+    rule_files = get_yara_rule_files(folder_path)
+    total_files = len(rule_files)
+    progress_per_file = 100 / total_files
+    compiled_rules = {}
 
-                except Exception as e:
-                    print("Error reading signature file %s" % (yara_rule_file), e)
+    max_workers = min(5, total_files)  # Set max_workers dynamically
+    chunk_size = total_files // 20  # Experiment with the chunk size
 
-        print("Rule count:", rule_count)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(compile_yara_rule, rule_file) for rule_file in rule_files]
 
-        if not os.path.exists(compiled_rules_path):
-            print(f"Creating directory: {compiled_rules_path}")
-            os.makedirs(compiled_rules_path)
+        for i, future in enumerate(as_completed(futures)):
+            try:
+                rule = future.result()
+                if rule is not None:
+                    compiled_rules[rule_files[i]] = rule
+            except Exception as e:
+                # Handle exceptions during rule compilation (e.g., log the error)
+                print(f"Error compiling rule {rule_files[i]}: {str(e)}")
 
-        compiled_rules_file = os.path.join(compiled_rules_path, "compiledRules")
+            # Update progress after processing a chunk
+            if (i + 1) % chunk_size == 0 or i == total_files - 1:
+                progress_value = int((i + 1) * progress_per_file)
+                print(f"Loading: {progress_value}%")
 
-        try:
-            with open(compiled_rules_file, 'w', encoding='latin-1') as f:
-                f.write(yaraRules)
+    return compiled_rules
 
-            print("Successfully wrote compiled rules to:", compiled_rules_file)
+def get_yara_rule_files(folder_path):
+    rule_files = []
+    for root, _, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith((".yara", ".yar", ".rule")):
+                rule_files.append(os.path.join(root, file))
+    return rule_files
 
-            compiledRules = yara.compile(filepath=compiled_rules_file)
-            print("Initialized %d Yara rules" % rule_count)
-            return "Initialized " + str(rule_count) + " Yara rules"
-        except PermissionError as pe_error:
-            print("PermissionError: Unable to write to the compiledRules directory.")
-            print(pe_error)
-            return "PermissionError: Unable to write to the compiledRules directory."
-    except Exception as e:
-        print("Error during YARA rule compilation ERROR:", e)
-        return "Error during YARA rule compilation ERROR: - please fix the issue in the rule set"
+def loading_complete(compiled_rules):
+    # Do whatever you need with the compiled_rules
+    print("Loading complete!")
+    print(compiled_rules)
+
+def load_yara_rules_in_thread():
+    global compiled_rules
+    compiled_rules = load_yara_rules(yara_folder_path)
+    loading_complete(compiled_rules)
+
+# Call load_yara_rules_in_thread to initiate the loading process in a separate thread
+load_yara_rules_in_thread()
 with app.app_context():
-    compileYaraSigs()
-XylentScanner = Scanner(signatures=signaturesData, rootPath=app.root_path)
-
-
+    yara_rules = compiled_rules
+# Create the Scanner instance with Yara rules
+XylentScanner = Scanner(sha256_signatures=sha256_signatures_data, md5_signatures=md5_signatures_data, yara_rules=yara_rules, rootPath=app.root_path)
 def startSystemWatcher(thread_resume):
     thread_resume.set()
-    systemWatcher(XylentScanner,SYSTEM_DRIVE,thread_resume)
-
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        # Submit the systemWatcher function to the ThreadPoolExecutor
+        future = executor.submit(systemWatcher, XylentScanner, SYSTEM_DRIVE, thread_resume)
 thread_resume = threading.Event()
 realTime_thread = threading.Thread(
     target=startSystemWatcher,args=(thread_resume,))
 realTime_thread.start()
+
+# Use ThreadPoolExecutor to execute new_main_program in a separate thread
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    # Submit new_main_program for execution
+    future = executor.submit(new_main_program(XylentScanner))
 
 @app.route("/setUserSetting",methods=['POST'])
 def setUserSetting():
@@ -113,12 +133,10 @@ def setUserSetting():
             print("RTP Set!")
     return "Config Applied!"
 
-
-
-@app.route("/getActiveProcesses",methods=['GET'])
+@app.route("/getActiveProcesses", methods=['GET'])
 def activeProcess():
     import subprocess
-    cmd = 'powershell "gps | where {$_.MainWindowTitle } | select ProcessName,Description,Id,Path'
+    cmd = 'powershell "gps | where {$_.MainWindowTitle } | select ProcessName,Description,Id,Path"'
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     ans = []
     for line in proc.stdout:
