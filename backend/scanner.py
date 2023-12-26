@@ -45,26 +45,27 @@ class Scanner:
                 return hash
         except (PermissionError, OSError):
             print("Permission Error")
-            return "XYLENT_PERMISSION_ERROR"
+
     def getTLSHHash(self, path):
-      try:
-        with open(path, 'rb') as f:
-            bytes = f.read()
-            file_size = os.path.getsize(path)
+        try:
+            with open(path, 'rb') as f:
+                bytes = f.read()
+                file_size = os.path.getsize(path)
 
-            if not bytes:
-                print("File is empty. Skipping.")
-                return None  # or handle this case as needed
+                if not bytes:
+                    print("File is empty. Skipping.")
+                    return None  # Return None for an empty file
 
-            if file_size < 256:
-                print("File size is less than 256 bytes. Skipping TLSH hash calculation.")
-                return None  # or handle this case as needed
+                if file_size < 256:
+                    print("File size is less than 256 bytes. Skipping TLSH hash calculation.")
+                    return None  # Return None for small files
 
-            hash = tlsh.hash(bytes)
-            return hash
-      except (PermissionError, OSError):
-        print("Permission Error or OS Error. Skipping.")
-        return None  # or handle this case as needed
+                hash_value = tlsh.hash(bytes)
+                return hash_value  # Return only the hash value
+        except (PermissionError, OSError):
+            print("Permission Error or OS Error. Skipping.")
+            return None  # Return None for permission or OS errors
+
     def verifyExecutableSignature(self, path):
         import subprocess
         import time
@@ -162,8 +163,8 @@ class Scanner:
 
                 # TLSH BASED DETECTION
                 tlsh_match_found = False
-                tlsh_hash, TNULL = self.getTLSHHash(path)
-                if not TNULL:
+                tlsh_hash = self.getTLSHHash(path)
+                if not tlsh_hash is None:
                  for tlsh_sig in self.__tlsh_signatures:
                         similarity = tlsh.diff(tlsh_hash, tlsh_sig)
                         if similarity <= 0.8:
