@@ -220,6 +220,7 @@ class Scanner:
                             if yara_match_found:
                                 # Set suspScore to 100 or any other value as needed
                                 suspScore = 100
+                                print(f"Updated suspScore: {suspScore}")
                     except Exception as e:
                         print(f"Error scanning {path} with YARA rules: {e}")
             # Print the verdict
@@ -257,4 +258,4 @@ class Scanner:
             if verdict:
                 print("Verdict is: " + verdict)
                 scanReport[files] = verdict
-        return scanReports
+        return scanReport
