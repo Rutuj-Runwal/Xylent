@@ -4,7 +4,6 @@ from flask import request,Flask,Response
 from scanner import Scanner
 from suspiciousWPDetector import SuspiciousWPDetector
 from systemWatcher import systemWatcher
-import concurrent.futures 
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
