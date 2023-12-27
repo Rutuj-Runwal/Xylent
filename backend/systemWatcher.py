@@ -18,20 +18,22 @@ FILE_ACTION_MODIFIED = 0x00000003
 
 # Initialize ParseJson
 XYLENT_NEW_PROCESS_INFO = ParseJson('./config', 'new_processes.json', {})
-XYLENT_SCAN_CACHE  = ParseJson('./config','xylent_scancache',{})
+XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 XYLENT_CACHE_MAXSIZE = 500000  # 500KB
 # Add global declarations for 'printed_processes' and 'previous_list'
 printed_processes = set()
 previous_list = set()
 
-def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
+# Create a queue for mouse events
+mouse_event_queue = Queue()
 
+def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     def on_mouse_click(x, y, button, pressed):
         path_to_scan = get_file_path_from_click(x, y)
         print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
         if path_to_scan is not None:
-            verdict = XylentScanner.scanFile(path_to_scan)
-            XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+            mouse_event_queue.put(path_to_scan)
+
     def get_file_path_from_click(x, y):
         hwnd = win32gui.WindowFromPoint((x, y))
         pid = win32process.GetWindowThreadProcessId(hwnd)[1]
@@ -73,6 +75,16 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 path_to_scan = os.path.join(path_to_watch, file)
                 verdict = XylentScanner.scanFile(path_to_scan)
                 XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+
+    def process_mouse_events():
+        while thread_resume.is_set():
+            try:
+                # Retrieve mouse events from the queue
+                path_to_scan = mouse_event_queue.get()
+                verdict = XylentScanner.scanFile(path_to_scan)
+                XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+            except Exception as e:
+                print(f"Error in process_mouse_events: {e}")
 
     def watch_processes():
         global printed_processes
@@ -182,8 +194,8 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
                     # Assuming you have a method named 'scanFile' in your Scanner class
                     for path in paths:
-                     verdict = XylentScanner.scanFile(path)
-                     XYLENT_SCAN_CACHE.setVal(path, verdict)
+                        verdict = XylentScanner.scanFile(path)
+                        XYLENT_SCAN_CACHE.setVal(path, verdict)
             # Include the running file itself in the path_to_scan
             path_to_scan = exe
             verdict = XylentScanner.scanFile(path_to_scan)
@@ -213,6 +225,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     mouse_listener = threading.Thread(target=lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
     mouse_listener.start()
 
+    mouse_event_thread = threading.Thread(target=process_mouse_events)
+    mouse_event_thread.start()
+
     monitor_thread = threading.Thread(target=file_monitor)
     monitor_thread.start()
 
@@ -220,9 +235,12 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     watch_processes_thread.start()
 
     mouse_listener.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
+    mouse_event_thread.join()  # Wait for the mouse event processing thread to finish
     monitor_thread.join()  # Wait for the file monitor to finish
     watch_processes_thread.join()  # Wait for the process monitoring thread to finish
+
     if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
-                XYLENT_SCAN_CACHE.purge()
-                print("Purging")
+        XYLENT_SCAN_CACHE.purge()
+        print("Purging")
+
     print("RTP waiting to start...")
