@@ -27,7 +27,7 @@ A powerful antivirus built using Electron framework and python
 - Blocks drive by downloads
 - Prevents malware replication
 - Blocks malware on file opening,renaming as well as copying
-
+- Detects newly opened files and mouse clicks on file.
 
 https://github.com/Rutuj-Runwal/Xylent/assets/59436520/38a76c6f-3bbe-49d7-baa0-c386d96e6492
 
