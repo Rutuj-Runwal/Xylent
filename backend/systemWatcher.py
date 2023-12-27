@@ -1,258 +1,281 @@
+import hashlib
 import os
-import win32file
-import win32con
-import win32gui
-import win32api
-import win32process
-import pynput.mouse
-import threading
-import queue
-from queue import Queue
-import psutil
-import concurrent.futures
-from parseJson import ParseJson
+import string
+import tlsh
+from quarantineThreats import Quarantine
+from concurrent.futures import ThreadPoolExecutor
 
-FILE_ACTION_ADDED = 0x00000001
-FILE_ACTION_REMOVED = 0x00000002
-FILE_ACTION_MODIFIED = 0x00000003
+class Scanner:
+    def __init__(self, sha256_signatures, md5_signatures, tlsh_signatures, rootPath, yara_rules):
+        self.__sha256_signatures = sha256_signatures
+        self.__md5_signatures = md5_signatures
+        self.__tlsh_signatures = tlsh_signatures
+        self.__rootPath = rootPath
+        self.yara_rules = yara_rules
+        self.quarantineData = {
+            'configFileName': 'quar_info',
+            'configFilePath': os.path.join(self.__rootPath, 'config'),
+            'defaults': {}
+        }
+        print("-----Scanner Initialized-----")
+        self.quar = Quarantine(self.quarantineData)
 
-# Initialize ParseJson
-XYLENT_NEW_PROCESS_INFO = ParseJson('./config', 'new_processes.json', {})
+        # Read excluded rule names from the file
+        excluded_rules_path = os.path.join(self.__rootPath, 'excluded', 'excluded_rules.txt')
+        with open(excluded_rules_path, "r") as file:
+            self.excluded_rules = file.read()
 
-# Add global declarations for 'printed_processes' and 'previous_list'
-printed_processes = set()
-previous_list = set()
-results_queue = Queue()  # Define results_queue as a global variable
-
-def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
-    XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
-    XYLENT_CACHE_MAXSIZE = 500000  # 500KB
-
-    def on_mouse_click(x, y, button, pressed):
-        path_to_scan = get_file_path_from_click(x, y)
-        print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
-    
-        if path_to_scan is not None:
-            result = XylentScanner.scanFile(path_to_scan)
-            results_queue.put(result)  # Put the result in the queue
-
-    def get_file_path_from_click(x, y):
-        hwnd = win32gui.WindowFromPoint((x, y))
-        pid = win32process.GetWindowThreadProcessId(hwnd)[1]
-        handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
-        return win32process.GetModuleFileNameEx(handle, 0)
-
-    def process_file_queue():
-        while thread_resume.is_set():
-            try:
-                path_to_scan = results_queue.get(timeout=0.01)  # Timeout to avoid blocking indefinitely
-                print(f"Processing file: {path_to_scan}")
-
-                try:
-                    if os.path.isfile(path_to_scan):
-                        verdict = XylentScanner.scanFile(path_to_scan)
-                        XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
-                        results_queue.put(verdict)  # Put the result in the queue
-                        print(f"Scanned and cached: {path_to_scan}")
-                except Exception as e:
-                    print(e)
-                    print(f"Error scanning {path_to_scan}")
-
-            except queue.Empty:
-                pass  # Queue is empty, continue checking
-
-            if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
-                XYLENT_SCAN_CACHE.purge()
-                print("Purging")
-
-    def file_monitor():
-        while thread_resume.is_set():
-            # File monitoring
-            path_to_watch = SYSTEM_DRIVE + "\\"
-            hDir = win32file.CreateFile(
-                path_to_watch,
-                1,
-                win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,
-                None,
-                win32con.OPEN_EXISTING,
-                win32con.FILE_FLAG_BACKUP_SEMANTICS,
-                None
-            )
-
-            results = win32file.ReadDirectoryChangesW(
-                hDir,
-                1024,
-                True,
-                win32con.FILE_NOTIFY_CHANGE_FILE_NAME |
-                win32con.FILE_NOTIFY_CHANGE_DIR_NAME |
-                win32con.FILE_NOTIFY_CHANGE_ATTRIBUTES |
-                win32con.FILE_NOTIFY_CHANGE_SIZE |
-                win32con.FILE_NOTIFY_CHANGE_LAST_WRITE |
-                win32con.FILE_NOTIFY_CHANGE_SECURITY |
-                FILE_ACTION_ADDED |
-                FILE_ACTION_MODIFIED |
-                FILE_ACTION_REMOVED,
-                None,
-                None
-            )
-
-            for action, file in results:
-                path_to_scan = os.path.join(path_to_watch, file)
-                print(path_to_scan)  # Print the path for debugging purposes
-                result = XylentScanner.scanFile(path_to_scan)
-                results_queue.put(result)  # Put the result in the queue
-
-    def watch_processes():
-        global printed_processes
-        global previous_list
-
-        # Print the initially running processes
-        initial_processes = get_running_processes()
-        print("Initially running processes:")
-        print(initial_processes)
-
-        printed_processes = set()
-
-        # Load new processes using ParseJson
-        new_processes = load_new_processes()
-
-        # Initialize previous_list
-        previous_list = initial_processes
-
-        while thread_resume.is_set():
-            try:
-                # Get current running processes
-                current_list = get_running_processes()
-
-                # Compare with the previous list and find new processes
-                newly_started_processes = current_list - previous_list
-                new_processes.update(dict.fromkeys(newly_started_processes))
-
-                if newly_started_processes:
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        # Submit each task individually and pass the required arguments
-                        futures = [executor.submit(new_process_checker, info, XylentScanner, results_queue) for info in newly_started_processes]
-                        concurrent.futures.wait(futures)
-
-                    # Print new processes once
-                    print("Newly started processes:")
-                    print(newly_started_processes)
-
-                    # Update printed_processes to avoid printing the same processes again
-                    printed_processes.update(newly_started_processes)
-
-                # Update the previous list
-                previous_list = current_list
-
-                # Save the updated new processes list to the file using ParseJson
-                save_new_processes(list(new_processes))
-            except Exception as e:
-                print(f"Error in watch_processes: {e}")
-
-    def load_new_processes():
+    def getFileHash(self, path):
         try:
-            return XYLENT_NEW_PROCESS_INFO.parseDataFile([])
-        except Exception:
-            return []
+            with open(path, 'rb') as f:
+                bytes = f.read()
+                
+                # Check if the file is empty
+                if not bytes:
+                    print("File is empty. Skipping hash calculation.")
+                    return None  # Return None for an empty file
+                
+                hash = hashlib.sha256(bytes).hexdigest()
+                return hash
+        except (PermissionError, OSError):
+            print("Permission Error")
+            return "XYLENT_PERMISSION_ERROR"
 
-    def save_new_processes(new_processes):
-        XYLENT_NEW_PROCESS_INFO.setVal("new_processes", new_processes)
-
-    def get_running_processes():
-        processes = set()
-        for p in psutil.process_iter(['exe', 'cmdline', 'ppid']):
-            try:
-                if p.info is not None and 'exe' in p.info:
-                    exe = p.info['exe']
-                    cmdline = tuple(p.info.get('cmdline', []))
-                    ppid = p.info.get('ppid', None)
-                    processes.add((exe, cmdline, ppid))
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, TypeError):
-                pass  # Skip processes that are inaccessible or no longer exist
-            except Exception as e:
-                print(f"Error getting process info: {e}")
-        return processes
-
-    def new_process_checker(process_info, XylentScanner, results_queue):
-        global printed_processes
-
-        # process_info is a tuple (exe, cmdline, pid)
-        exe, cmdline, pid = process_info
-
-        if exe not in printed_processes:
-            # Print the running file only once
-            print(f"Running File: {exe}")
-            printed_processes.add(exe)
-
-            parent_process_info = get_parent_process_info(pid)
-            if parent_process_info is None or parent_process_info.get('exe') is None:
-                return  # Skip processing if parent process info is None or has no executable information
-
-            parent_path = parent_process_info['exe']
-
-            # Check if parent and child have the same location
-            if parent_path != "Unknown" and exe.startswith(parent_path):
-                return  # Skip processing if they have the same location
-
-            # Check if parent and child have the same full path
-            if os.path.abspath(exe) == os.path.abspath(parent_path):
-                return  # Skip processing if they have the same full path
-
-            message = f"Path: {exe}, Parent Process Path: {parent_path}, Command Line: {cmdline}"
-
-            # Print to the console
-            print("New Process Detected:", message)
-
-            # Check if the command line includes paths
-            if isinstance(cmdline, list):  # Ensure cmdline is a list
-                paths = [arg for arg in cmdline if os.path.isabs(arg) and os.path.exists(arg)]
-                if paths:
-                    print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
-                    # Assuming you have a method named 'scanFile' in your Scanner class
-                    for path in paths:
-                        result = XylentScanner.scanFile(path)
-                        results_queue.put(result)  # Put the result in the queue
-        # Include the running file itself in the path_to_scan
-        path_to_scan = exe
-        result = XylentScanner.scanFile(path_to_scan)
-        results_queue.put(result)  # Put the result in the queue
-
-    def get_parent_process_info(file_path):
+    def getMD5Hash(self, path):
         try:
-            process = psutil.Process(os.getpid())
-            for parent in process.parents():
-                if parent.exe() == file_path:
-                    return {
-                        'name': parent.name(),
-                        'exe': parent.exe(),
-                        'cmdline': parent.cmdline(),
-                        'pid': parent.pid,
-                    }
+            with open(path, 'rb') as f:
+                bytes = f.read()
+                
+                # Check if the file is empty
+                if not bytes:
+                    print("File is empty. Skipping hash calculation.")
+                    return None  # Return None for an empty file
+                
+                hash = hashlib.md5(bytes).hexdigest()
+                return hash
+        except (PermissionError, OSError):
+            print("Permission Error")
+            return "XYLENT_PERMISSION_ERROR"
+         
+    def is_valid_tlsh_signature(self, signature):
+        # Check if the signature is not None and is a valid hex string
+        return signature is not None and all(c in string.hexdigits for c in signature)
+
+    def calculate_tlsh(self, file_path):
+     try:
+        with open(file_path, "rb") as file:
+            file_data = file.read()
+        if file_data:
+            tlsh_value = tlsh.hash(file_data)
+            return tlsh_value.hexadigest() # Convert TLSH value to hex string
+        else:
+            print("File is empty. Skipping TLSH hash calculation.")
             return None
-        except psutil.NoSuchProcess:
-            print(f"Error: No such process with path {file_path}")
-        except psutil.AccessDenied:
-            print(f"Error: Access denied while retrieving information for path {file_path}")
-        except Exception as e:
-            print(f"An unexpected error occurred while getting parent process info for path {file_path}: {e}")
-
+     except (PermissionError, OSError):
+        print("Permission Error or OS Error. Skipping TLSH hash calculation.")
         return None
 
-    mouse_listener = threading.Thread(target=lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
-    mouse_listener.start()
+    def getTLSHHash(self, path):
+        try:
+            with open(path, 'rb') as f:
+                bytes_data = f.read()
+                file_size = os.path.getsize(path)
 
-    monitor_thread = threading.Thread(target=file_monitor)
-    monitor_thread.start()
+                # Check if the file is empty
+                if not bytes_data:
+                    print("File is empty. Skipping TLSH hash calculation.")
+                    return None  # Return None for an empty file
 
-    process_queue_thread = threading.Thread(target=process_file_queue)
-    process_queue_thread.start()
+                if file_size < 256:
+                    print("File size is less than 256 bytes. Skipping TLSH hash calculation.")
+                    return None  # Return None for small files
 
-    watch_processes_thread = threading.Thread(target=watch_processes)
-    watch_processes_thread.start()
+                # Use ThreadPoolExecutor to run the TLSH hash calculation in a separate thread
+                with ThreadPoolExecutor() as executor:
+                    future = executor.submit(self.calculate_tlsh, path)
+                    hash_value = future.result()
 
-    mouse_listener.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
-    monitor_thread.join()  # Wait for the file monitor to finish
-    process_queue_thread.join()  # Wait for the file processing thread to finish
-    watch_processes_thread.join()  # Wait for the process monitoring thread to finish
+                # Check if the TLSH signature is valid
+                if self.is_valid_tlsh_signature(hash_value):
+                    print(f"Invalid TLSH signature: {hash_value}")
+                    return None
 
-    print("RTP waiting to start...")
+                # Check if the TLSH hash is "TNULL"
+                if hash_value == "TNULL":
+                    print("TLSH hash is TNULL. Skipping TLSH-based detection.")
+                    return None
+
+                return hash_value  # Return only the hash value
+        except (PermissionError, OSError):
+            print("Permission Error or OS Error. Skipping TLSH hash calculation.")
+            return None
+        
+    def verifyExecutableSignature(self, path):
+        import subprocess
+        import time
+        import datetime
+        cmd = " " + f'"{path}"'
+        command = "(Get-AuthenticodeSignature" + cmd + ").Status"
+        process = subprocess.run(['Powershell', '-Command', command], stdout=subprocess.PIPE, encoding='utf-8')
+        now = time.time()
+        ageInSec = now - os.stat(path).st_mtime
+        age = str(datetime.timedelta(seconds=ageInSec))
+        if process.stdout.strip() == "HashMismatch" or process.stdout.strip() == "UnknownError":
+            return {'score': 80, 'age': age}
+        elif process.stdout.strip() == "NotTrusted":
+            return {'score': 70, 'age': age}
+        elif process.stdout.strip() == "NotSigned":
+            return {'score': 30, 'age': age}
+        else:
+            return {'score': 0, 'age': age}
+
+    def handleArchives(self, path):
+        print("Handling Archive!!")
+        import shutil
+        try:
+            archiveExtractPath = "./scanExtracts"
+            if archiveExtractPath.split("/")[1] in path:
+                print("Skipped to avoid recursion. Depth=1 for scanning archives!")
+                return "DONE!"
+            else:
+                if not os.path.exists(archiveExtractPath):
+                    os.mkdir(archiveExtractPath)
+                shutil.unpack_archive(path, archiveExtractPath)
+                verdicts = self.scanFolders(archiveExtractPath)
+                if "[S]" in verdicts or "[Y]" in verdicts:
+                    if os.path.exists(archiveExtractPath):
+                        print("Malware detected in archive")
+                        from notifypy import Notify
+                        notification = Notify()
+                        # Set notification properties
+                        notification.title = "Archive Repaired"
+                        notification.message = "Archive with malicious content repaired. Malware removed, Safe content Preserved!"
+                        notification.send()
+                        self.quar.quarantineFilesInArchive(originalZipPath=path, preserveArchiveContent=True)
+
+        except Exception as e:
+            print(e)
+        return "DONE!"
+
+    def scanFile(self, path):
+        detectionSpace = "SAFE"
+        suspScore = 0
+        isArchive = False
+        try:
+            fileExtension = os.path.splitext(path)[1]
+            hashToChk = self.getFileHash(path)
+          # Check if the file is empty
+            if hashToChk is None:
+              print("File is empty. Skipping.")
+              return "SKIPPED"
+
+            if hashToChk == "XYLENT_PERMISSION_ERROR":
+                    return "SKIPPED"
+
+            if fileExtension == ".zip" or fileExtension == ".tar":
+                    isArchive = True
+
+            if not isArchive and (fileExtension == ".exe" or fileExtension == ".msi"):
+                print(path)
+                print("Analyzing file signature....")
+                exeSigData = self.verifyExecutableSignature(path)
+                print(exeSigData)
+                suspScore += exeSigData['score']
+                if suspScore >= 70:
+                    detectionSpace = "Invalid Signature"
+
+            if hashToChk != "" and suspScore < 70:
+                # SIGNATURE BASED DETECTION - SHA256
+                sha256_match_found = False
+                for sha256_hash in self.__sha256_signatures:
+                    if sha256_hash == str(hashToChk):
+                        print(self.__sha256_signatures[sha256_hash])
+                        detectionSpace = "[S]" + self.__sha256_signatures[sha256_hash]
+                        sha256_match_found = True
+                        break
+
+                # SIGNATURE BASED DETECTION - MD5
+                md5_match_found = False
+                md5_hash = self.getMD5Hash(path)
+                for md5_hash_sig in self.__md5_signatures:
+                    if md5_hash == md5_hash_sig:
+                        print(self.__md5_signatures[md5_hash_sig])
+                        detectionSpace = "[S]" + self.__md5_signatures[md5_hash_sig]
+                        md5_match_found = True
+                        break
+
+                # Combine hash match checks
+                if sha256_match_found or md5_match_found:
+                    # Set suspScore to 100 or any other value as needed
+                    suspScore = 100
+
+            # TLSH BASED DETECTION
+            tlsh_match_found = False
+            tlsh_hash = self.getTLSHHash(path)
+            if tlsh_hash is not None and tlsh_hash != "TNULL":
+                for tlsh_sig in self.__tlsh_signatures:
+                    if tlsh_sig != "TNULL":
+                        similarity = tlsh.diff(tlsh_hash, tlsh_sig)
+                        if similarity <= 0.8:
+                            detectionSpace = "[S]"  # TLSH match
+                            tlsh_match_found = True
+                            print(f"Malware detected using TLSH! Signature: {tlsh_sig}, Similarity: {similarity}")
+                            break
+
+            if tlsh_match_found:
+                suspScore = 100
+
+                # YARA RULES DETECTION
+                if not isArchive:
+                    try:
+                        with open(path, 'rb') as f:
+                            file_content = f.read()
+                        yara_match_found = False
+                        for rule_name, compiled_rule in self.yara_rules.items():
+                            matches = compiled_rule.match(data=file_content)
+                            for match in matches:
+                                if match.rule not in self.excluded_rules:
+                                    # If any YARA rule matches, consider it as malware
+                                    print(f"YARA Rule Match: {rule_name} - {match}")
+                                    detectionSpace = "[Y]" + rule_name
+                                    yara_match_found = True
+                                    break  # Break on first match
+                            if yara_match_found:
+                                # Set suspScore to 100 or any other value as needed
+                                suspScore = 100
+                    except Exception as e:
+                        print(f"Error scanning {path} with YARA rules: {e}")
+
+            if not isArchive and suspScore >= 70:
+                notif_str = "Xylent is taking action against detected malware " + path
+                from notifypy import Notify
+                notification = Notify()
+                notification.title = "Malware Detected"
+                notification.message = notif_str
+                notification.send()
+                self.quar.quarantine(path, detectionSpace)
+            if isArchive:
+                self.handleArchives(path)
+
+            return detectionSpace
+        except Exception as e:
+            print(f"Error scanning {path}: {e}")
+            return "SKIPPED"
+
+    def scanFolders(self, location):
+        directories = []
+        if isinstance(location, list):
+            for target in location:
+                for (dirpath, dirnames, filenames) in os.walk(target):
+                    directories += [os.path.join(dirpath, file) for file in filenames]
+        elif isinstance(location, str):
+            for (dirpath, dirnames, filenames) in os.walk(location):
+                directories += [os.path.join(dirpath, file) for file in filenames]
+
+        scanReport = {}
+        for files in directories:
+            verdict = self.scanFile(files)
+            if verdict:
+                print("Verdict is: " + verdict)
+                scanReport[files] = verdict
+        return scanReport
