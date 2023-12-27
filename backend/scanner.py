@@ -67,14 +67,14 @@ class Scanner:
             file_data = file.read()
         if file_data:
             tlsh_value = tlsh.hash(file_data)
-            return tlsh_value
+            return str(tlsh_value)
         else:
             print("File is empty. Skipping TLSH hash calculation.")
             return None
      except (PermissionError, OSError):
         print("Permission Error or OS Error. Skipping TLSH hash calculation.")
         return None
-
+     
     def getTLSHHash(self, path):
         try:
             with open(path, 'rb') as f:
@@ -90,13 +90,11 @@ class Scanner:
                     print("File size is less than 256 bytes. Skipping TLSH hash calculation.")
                     return None  # Return None for small files
 
-                # Use ThreadPoolExecutor to run the TLSH hash calculation in a separate thread
-                with ThreadPoolExecutor() as executor:
-                    future = executor.submit(self.calculate_tlsh, path)
-                    hash_value = future.result()
+                # Calculate the TLSH hash directly without using ThreadPoolExecutor
+                hash_value = self.calculate_tlsh(path)
 
                 # Check if the TLSH signature is valid
-                if self.is_valid_tlsh_signature(hash_value):
+                if not self.is_valid_tlsh_signature(hash_value):
                     print(f"Invalid TLSH signature: {hash_value}")
                     return None
 
