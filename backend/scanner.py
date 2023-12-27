@@ -195,7 +195,7 @@ class Scanner:
                     if tlsh_sig != "TNULL":
                         similarity = tlsh.diff(tlsh_hash, tlsh_sig)
                         if similarity <= 0.8:
-                            detectionSpace = "[S]"  # TLSH match
+                            detectionSpace = "[S]" + self.__tlsh_signatures[tlsh_sig]
                             tlsh_match_found = True
                             print(f"Malware detected using TLSH! Signature: {tlsh_sig}, Similarity: {similarity}")
                             break
