@@ -1274,3 +1274,4 @@
 "golang",
 "ASProtect_v132",
 "gobfuscate",
+"capa_find_taskbar",
