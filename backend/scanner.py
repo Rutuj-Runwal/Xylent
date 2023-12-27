@@ -1,7 +1,9 @@
 import hashlib
 import os
+import string
 import tlsh
 from quarantineThreats import Quarantine
+from concurrent.futures import ThreadPoolExecutor
 
 class Scanner:
     def __init__(self, sha256_signatures, md5_signatures, tlsh_signatures, rootPath, yara_rules):
@@ -24,47 +26,85 @@ class Scanner:
             self.excluded_rules = file.read()
 
     def getFileHash(self, path):
-        hash = ""
         try:
             with open(path, 'rb') as f:
                 bytes = f.read()
+                
+                # Check if the file is empty
+                if not bytes:
+                    print("File is empty. Skipping hash calculation.")
+                    return None  # Return None for an empty file
+                
                 hash = hashlib.sha256(bytes).hexdigest()
-            if hash != "":
                 return hash
         except (PermissionError, OSError):
             print("Permission Error")
             return "XYLENT_PERMISSION_ERROR"
 
     def getMD5Hash(self, path):
-        hash = ""
         try:
             with open(path, 'rb') as f:
                 bytes = f.read()
+                
+                # Check if the file is empty
+                if not bytes:
+                    print("File is empty. Skipping hash calculation.")
+                    return None  # Return None for an empty file
+                
                 hash = hashlib.md5(bytes).hexdigest()
-            if hash != "":
                 return hash
         except (PermissionError, OSError):
             print("Permission Error")
+            return "XYLENT_PERMISSION_ERROR"
+
+    def is_valid_tlsh_signature(self, signature):
+        # Check if the signature is not empty and is a valid hex string
+        return bool(signature) and all(c in string.hexdigits for c in signature)
+    
+    def calculate_tlsh(self, file_path):
+        try:
+            with open(file_path, "rb") as file:
+                file_data = file.read()
+                tlsh_value = tlsh.hash(file_data)
+            return tlsh_value
+        except (PermissionError, OSError):
+            print("Permission Error or OS Error. Skipping TLSH hash calculation.")
+            return None
 
     def getTLSHHash(self, path):
         try:
             with open(path, 'rb') as f:
-                bytes = f.read()
+                bytes_data = f.read()
                 file_size = os.path.getsize(path)
 
-                if not bytes:
-                    print("File is empty. Skipping.")
+                # Check if the file is empty
+                if not bytes_data:
+                    print("File is empty. Skipping TLSH hash calculation.")
                     return None  # Return None for an empty file
 
                 if file_size < 256:
                     print("File size is less than 256 bytes. Skipping TLSH hash calculation.")
                     return None  # Return None for small files
 
-                hash_value = tlsh.hash(bytes)
+                # Use ThreadPoolExecutor to run the TLSH hash calculation in a separate thread
+                with ThreadPoolExecutor() as executor:
+                    future = executor.submit(self.calculate_tlsh, path)
+                    hash_value = future.result()
+
+                # Check if the TLSH signature is valid
+                if not self.is_valid_tlsh_signature(hash_value):
+                    print(f"Invalid TLSH signature: {hash_value}")
+                    return None
+
+                # Check if the TLSH hash is "TNULL"
+                if hash_value == "TNULL":
+                    print("TLSH hash is TNULL. Skipping TLSH-based detection.")
+                    return None
+
                 return hash_value  # Return only the hash value
         except (PermissionError, OSError):
-            print("Permission Error or OS Error. Skipping.")
-            return None  # Return None for permission or OS errors
+            print("Permission Error or OS Error. Skipping TLSH hash calculation.")
+            return None
 
     def verifyExecutableSignature(self, path):
         import subprocess
@@ -161,11 +201,12 @@ class Scanner:
                     # Set suspScore to 100 or any other value as needed
                     suspScore = 100
 
-                # TLSH BASED DETECTION
-                tlsh_match_found = False
-                tlsh_hash = self.getTLSHHash(path)
-                if not tlsh_hash is None:
-                 for tlsh_sig in self.__tlsh_signatures:
+            # TLSH BASED DETECTION
+            tlsh_match_found = False
+            tlsh_hash = self.getTLSHHash(path)
+            if tlsh_hash is not None and tlsh_hash != "TNULL":
+                for tlsh_sig in self.__tlsh_signatures:
+                    if tlsh_sig != "TNULL":
                         similarity = tlsh.diff(tlsh_hash, tlsh_sig)
                         if similarity <= 0.8:
                             detectionSpace = "[S]"  # TLSH match
@@ -173,8 +214,8 @@ class Scanner:
                             print(f"Malware detected using TLSH! Signature: {tlsh_sig}, Similarity: {similarity}")
                             break
 
-                if tlsh_match_found:
-                    suspScore = 100
+            if tlsh_match_found:
+                suspScore = 100
 
                 # YARA RULES DETECTION
                 if not isArchive:
@@ -193,18 +234,18 @@ class Scanner:
                                     break  # Break on first match
                             if yara_match_found:
                                 # Set suspScore to 100 or any other value as needed
-                                    suspScore = 100
+                                suspScore = 100
                     except Exception as e:
                         print(f"Error scanning {path} with YARA rules: {e}")
 
             if not isArchive and suspScore >= 70:
-                    notif_str = "Xylent is taking action against detected malware " + path
-                    from notifypy import Notify
-                    notification = Notify()
-                    notification.title = "Malware Detected"
-                    notification.message = notif_str
-                    notification.send()
-                    self.quar.quarantine(path, detectionSpace)
+                notif_str = "Xylent is taking action against detected malware " + path
+                from notifypy import Notify
+                notification = Notify()
+                notification.title = "Malware Detected"
+                notification.message = notif_str
+                notification.send()
+                self.quar.quarantine(path, detectionSpace)
             if isArchive:
                 self.handleArchives(path)
 
@@ -212,7 +253,7 @@ class Scanner:
         except Exception as e:
             print(f"Error scanning {path}: {e}")
             return "SKIPPED"
-        
+
     def scanFolders(self, location):
         directories = []
         if isinstance(location, list):
@@ -229,4 +270,4 @@ class Scanner:
             if verdict:
                 print("Verdict is: " + verdict)
                 scanReport[files] = verdict
-        return 
+        return scanReport
