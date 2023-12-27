@@ -58,8 +58,13 @@ class Scanner:
             return "XYLENT_PERMISSION_ERROR"
         
     def is_valid_tlsh_signature(self, signature):
-        # Check if the signature is not None and is a valid hex string
-        return signature is not None and all(c in string.hexdigits for c in signature)
+    # Check if the signature is not None, has a valid length, and is a valid hex string
+     return (
+        signature is not None
+        and len(signature) == 73
+        and all(c in string.hexdigits for c in signature)
+      )
+
 
     def calculate_tlsh(self, file_path):
      try:
