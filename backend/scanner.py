@@ -145,8 +145,8 @@ class Scanner:
               print("File is empty. Skipping.")
               return "SKIPPED"
             # Check if the file is empty or size is 256 bytes or less
-            if file_size <= 256:
-             print("File size is 256 bytes or less. Skipping.")
+            if file_size <= 4:
+             print("File size is 4 bytes or less. Skipping.")
              return "SKIPPED"
 
             if hashToChk == "XYLENT_PERMISSION_ERROR":
