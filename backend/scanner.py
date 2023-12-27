@@ -160,6 +160,10 @@ class Scanner:
         try:
             fileExtension = os.path.splitext(path)[1]
             hashToChk = self.getFileHash(path)
+          # Check if the file is empty
+            if hashToChk is None:
+              print("File is empty. Skipping.")
+              return "SKIPPED"
 
             if hashToChk == "XYLENT_PERMISSION_ERROR":
                     return "SKIPPED"
