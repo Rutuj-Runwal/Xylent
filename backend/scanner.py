@@ -57,10 +57,6 @@ class Scanner:
             print("Permission Error")
             return "XYLENT_PERMISSION_ERROR"
          
-    def is_valid_tlsh_signature(self, signature):
-        # Check if the signature is not None and is a valid hex string
-        return signature is not None and all(c in string.hexdigits for c in signature)
-
     def calculate_tlsh(self, file_path):
      try:
         with open(file_path, "rb") as file:
@@ -92,11 +88,6 @@ class Scanner:
 
                 # Calculate the TLSH hash directly without using ThreadPoolExecutor
                 hash_value = self.calculate_tlsh(path)
-
-                # Check if the TLSH signature is valid
-                if not self.is_valid_tlsh_signature(hash_value):
-                    print(f"Invalid TLSH signature: {hash_value}")
-                    return None
 
                 # Check if the TLSH hash is "TNULL"
                 if hash_value == "TNULL":
