@@ -67,7 +67,7 @@ class Scanner:
             file_data = file.read()
         if file_data:
             tlsh_value = tlsh.hash(file_data)
-            return tlsh_value.hexadigest() # Convert TLSH value to hex string
+            return tlsh_value.hexdigest() # Convert TLSH value to hex string
         else:
             print("File is empty. Skipping TLSH hash calculation.")
             return None
