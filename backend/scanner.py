@@ -142,7 +142,7 @@ class Scanner:
             if hashToChk is None:
               print("File is empty. Skipping.")
               return "SKIPPED"
-            # Check if the file is empty or size is 256 bytes or less
+            # Check if the file is empty or size is 4 bytes or less
             if file_size <= 4:
              print("File size is 4 bytes or less. Skipping.")
              return "SKIPPED"
@@ -223,6 +223,8 @@ class Scanner:
                                 suspScore = 100
                     except Exception as e:
                         print(f"Error scanning {path} with YARA rules: {e}")
+            # Print the verdict
+            print(f"Verdict for {path}: {detectionSpace}")
 
             if not isArchive and suspScore >= 70:
                 notif_str = "Xylent is taking action against detected malware " + path
