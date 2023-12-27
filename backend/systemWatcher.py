@@ -73,6 +73,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
             for action, file in results:
                 path_to_scan = os.path.join(path_to_watch, file)
+                print(f"Scanning file: {path_to_scan}")
                 verdict = XylentScanner.scanFile(path_to_scan)
                 XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
 
@@ -194,10 +195,12 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
                     # Assuming you have a method named 'scanFile' in your Scanner class
                     for path in paths:
+                        print(f"Scanning file: {path}")
                         verdict = XylentScanner.scanFile(path)
                         XYLENT_SCAN_CACHE.setVal(path, verdict)
             # Include the running file itself in the path_to_scan
             path_to_scan = exe
+            print(f"Scanning file: {path_to_scan}")
             verdict = XylentScanner.scanFile(path_to_scan)
             XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
 
@@ -222,21 +225,21 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
         return None
     
-   # Start the mouse listener
+    # Start the thread for processing mouse events concurrently
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.submit(lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
+        mouse_listener_future = executor.submit(lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
+        process_mouse_events_future = executor.submit(process_mouse_events)
 
-    # Start the thread for processing mouse events
+    # Start the file monitor thread concurrently
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.submit(process_mouse_events)
+        file_monitor_future = executor.submit(file_monitor)
 
-    # Start the file monitor thread
+    # Start the watch processes thread concurrently
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.submit(file_monitor)
+        watch_processes_future = executor.submit(watch_processes)
 
-    # Start the watch processes thread
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.submit(watch_processes)
+    # Wait for all threads to finish
+    concurrent.futures.wait([mouse_listener_future, process_mouse_events_future, file_monitor_future, watch_processes_future])
 
     if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
         XYLENT_SCAN_CACHE.purge()
