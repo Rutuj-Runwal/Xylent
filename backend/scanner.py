@@ -63,7 +63,7 @@ class Scanner:
             file_data = file.read()
         if file_data:
             tlsh_value = tlsh.hash(file_data)
-            return str(tlsh_value)
+            return tlsh_value
         else:
             print("File is empty. Skipping TLSH hash calculation.")
             return None
@@ -85,16 +85,17 @@ class Scanner:
                 if file_size < 256:
                     print("File size is less than 256 bytes. Skipping TLSH hash calculation.")
                     return None  # Return None for small files
+                
+                hash_value_bytes = self.calculate_tlsh(path)
 
-                # Calculate the TLSH hash directly without using ThreadPoolExecutor
-                hash_value = self.calculate_tlsh(path)
+                hash_value_hex = hash_value_bytes.hex()
 
                 # Check if the TLSH hash is "TNULL"
-                if hash_value == "TNULL":
+                if hash_value_hex == "TNULL":
                     print("TLSH hash is TNULL. Skipping TLSH-based detection.")
                     return None
 
-                return hash_value  # Return only the hash value
+                return hash_value_hex # Return only the hash value
         except (PermissionError, OSError):
             print("Permission Error or OS Error. Skipping TLSH hash calculation.")
             return None
@@ -152,11 +153,16 @@ class Scanner:
         isArchive = False
         try:
             fileExtension = os.path.splitext(path)[1]
+            file_size = os.path.getsize(path)
             hashToChk = self.getFileHash(path)
           # Check if the file is empty
             if hashToChk is None:
               print("File is empty. Skipping.")
               return "SKIPPED"
+            # Check if the file is empty or size is 256 bytes or less
+            if file_size <= 256:
+             print("File is empty or size is 256 bytes or less. Skipping.")
+             return "SKIPPED"
 
             if hashToChk == "XYLENT_PERMISSION_ERROR":
                     return "SKIPPED"
