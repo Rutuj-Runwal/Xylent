@@ -1,9 +1,7 @@
 import hashlib
 import os
-import string
 import tlsh
 from quarantineThreats import Quarantine
-from concurrent.futures import ThreadPoolExecutor
 
 class Scanner:
     def __init__(self, sha256_signatures, md5_signatures, tlsh_signatures, rootPath, yara_rules):
