@@ -170,8 +170,11 @@ class Scanner:
                         print(self.__sha256_signatures[sha256_hash])
                         detectionSpace = "[S]" + self.__sha256_signatures[sha256_hash]
                         sha256_match_found = True
-                        break
-
+                # Combine hash match checks
+                if sha256_match_found:
+                    # Set suspScore to 100 or any other value as needed
+                    suspScore = 100
+            if hashToChk != "" and suspScore < 70:
                 # SIGNATURE BASED DETECTION - MD5
                 md5_match_found = False
                 md5_hash = self.getMD5Hash(path)
@@ -180,31 +183,28 @@ class Scanner:
                         print(self.__md5_signatures[md5_hash_sig])
                         detectionSpace = "[S]" + self.__md5_signatures[md5_hash_sig]
                         md5_match_found = True
-                        break
-
                 # Combine hash match checks
-                if sha256_match_found or md5_match_found:
+                if md5_match_found:
                     # Set suspScore to 100 or any other value as needed
                     suspScore = 100
-
-            # TLSH BASED DETECTION
-            tlsh_match_found = False
-            tlsh_hash = self.getTLSHHash(path)
-            if tlsh_hash is not None and tlsh_hash != "TNULL":
-                for tlsh_sig in self.__tlsh_signatures:
-                    if tlsh_sig != "TNULL":
-                        similarity = tlsh.diff(tlsh_hash, tlsh_sig)
-                        if similarity <= 0.8:
-                            detectionSpace = "[S]" + self.__tlsh_signatures[tlsh_sig]
-                            tlsh_match_found = True
-                            print(f"Malware detected using TLSH! Signature: {tlsh_sig}, Similarity: {similarity}")
-                            break
-
-            if tlsh_match_found:
-                suspScore = 100
+            if hashToChk != "" and suspScore < 70:
+               # TLSH BASED DETECTION
+                tlsh_match_found = False
+                tlsh_hash = self.getTLSHHash(path)
+                if tlsh_hash is not None and tlsh_hash != "TNULL":
+                    for tlsh_sig in self.__tlsh_signatures:
+                        if tlsh_sig != "TNULL":
+                            similarity = tlsh.diff(tlsh_hash, tlsh_sig)
+                            if similarity <= 0.8:
+                                detectionSpace = "[S]" + self.__tlsh_signatures[tlsh_sig]
+                                tlsh_match_found = True
+                                print(f"Malware detected using TLSH! Signature: {tlsh_sig}, Similarity: {similarity}")
+ 
+                if tlsh_match_found:
+                  suspScore = 100
 
                 # YARA RULES DETECTION
-                if not isArchive:
+                if not isArchive and suspScore < 70:
                     try:
                         with open(path, 'rb') as f:
                             file_content = f.read()
@@ -217,7 +217,6 @@ class Scanner:
                                     print(f"YARA Rule Match: {rule_name} - {match}")
                                     detectionSpace = "[Y]" + rule_name
                                     yara_match_found = True
-                                    break  # Break on first match
                             if yara_match_found:
                                 # Set suspScore to 100 or any other value as needed
                                 suspScore = 100
@@ -258,4 +257,4 @@ class Scanner:
             if verdict:
                 print("Verdict is: " + verdict)
                 scanReport[files] = verdict
-        return scanReport
+        return scanReports
