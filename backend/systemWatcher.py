@@ -221,23 +221,22 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"An unexpected error occurred while getting parent process info for path {file_path}: {e}")
 
         return None
+    
+   # Start the mouse listener
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        executor.submit(lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
 
-    mouse_listener = threading.Thread(target=lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
-    mouse_listener.start()
+    # Start the thread for processing mouse events
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        executor.submit(process_mouse_events)
 
-    mouse_event_thread = threading.Thread(target=process_mouse_events)
-    mouse_event_thread.start()
+    # Start the file monitor thread
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        executor.submit(file_monitor)
 
-    monitor_thread = threading.Thread(target=file_monitor)
-    monitor_thread.start()
-
-    watch_processes_thread = threading.Thread(target=watch_processes)
-    watch_processes_thread.start()
-
-    mouse_listener.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
-    mouse_event_thread.join()  # Wait for the mouse event processing thread to finish
-    monitor_thread.join()  # Wait for the file monitor to finish
-    watch_processes_thread.join()  # Wait for the process monitoring thread to finish
+    # Start the watch processes thread
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        executor.submit(watch_processes)
 
     if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
         XYLENT_SCAN_CACHE.purge()
