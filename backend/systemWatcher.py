@@ -23,45 +23,20 @@ XYLENT_CACHE_MAXSIZE = 500000  # 500KB
 # Add global declarations for 'printed_processes' and 'previous_list'
 printed_processes = set()
 previous_list = set()
-results_queue = Queue()  # Define results_queue as a global variable
 
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
-    file_queue = Queue()
 
     def on_mouse_click(x, y, button, pressed):
         path_to_scan = get_file_path_from_click(x, y)
         print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
         if path_to_scan is not None:
-            file_queue.put(path_to_scan)  # Enqueue the file for processing
-
+            verdict = XylentScanner.scanFile(path_to_scan)
+            XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
     def get_file_path_from_click(x, y):
         hwnd = win32gui.WindowFromPoint((x, y))
         pid = win32process.GetWindowThreadProcessId(hwnd)[1]
         handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
         return win32process.GetModuleFileNameEx(handle, 0)
-
-    def process_file_queue():
-        while thread_resume.is_set():
-            try:
-                path_to_scan = file_queue.get()
-                print(f"Processing file: {path_to_scan}")
-
-                try:
-                    if os.path.isfile(path_to_scan):
-                        verdict = XylentScanner.scanFile(path_to_scan)
-                        XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
-                        results_queue.put(verdict)  # Put the result in the queue
-                        print(f"Scanned and cached: {path_to_scan}")
-                except Exception as e:
-                    print(e)
-                    print(f"Error scanning {path_to_scan}")
-
-            except queue.Empty:
-                pass  # Queue is empty, continue checking
-
-            if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
-                XYLENT_SCAN_CACHE.purge()
-                print("Purging")
 
     def file_monitor():
         while thread_resume.is_set():
@@ -96,8 +71,8 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
             for action, file in results:
                 path_to_scan = os.path.join(path_to_watch, file)
-                print(path_to_scan)  # Print the path for debugging purposes
-                file_queue.put(path_to_scan)  # Enqueue the file for processing
+                verdict = XylentScanner.scanFile(path_to_scan)
+                XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
 
     def watch_processes():
         global printed_processes
@@ -207,10 +182,12 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
                     # Assuming you have a method named 'scanFile' in your Scanner class
                     for path in paths:
-                     file_queue.put(path)  # Enqueue each path for processing
+                     verdict = XylentScanner.scanFile(path)
+                     XYLENT_SCAN_CACHE.setVal(path, verdict)
             # Include the running file itself in the path_to_scan
             path_to_scan = exe
-            file_queue.put(path_to_scan)  # Enqueue the running file for processing
+            verdict = XylentScanner.scanFile(path_to_scan)
+            XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
 
     def get_parent_process_info(file_path):
         try:
@@ -239,15 +216,13 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     monitor_thread = threading.Thread(target=file_monitor)
     monitor_thread.start()
 
-    process_queue_thread = threading.Thread(target=process_file_queue)
-    process_queue_thread.start()
-
     watch_processes_thread = threading.Thread(target=watch_processes)
     watch_processes_thread.start()
 
     mouse_listener.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
     monitor_thread.join()  # Wait for the file monitor to finish
-    process_queue_thread.join()  # Wait for the file processing thread to finish
     watch_processes_thread.join()  # Wait for the process monitoring thread to finish
-
+    if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
+                XYLENT_SCAN_CACHE.purge()
+                print("Purging")
     print("RTP waiting to start...")
