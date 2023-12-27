@@ -27,7 +27,6 @@ results_queue = Queue()  # Define results_queue as a global variable
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
     XYLENT_CACHE_MAXSIZE = 500000  # 500KB
-    file_queue = Queue()
 
     def on_mouse_click(x, y, button, pressed):
         path_to_scan = get_file_path_from_click(x, y)
@@ -46,7 +45,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     def process_file_queue():
         while thread_resume.is_set():
             try:
-                path_to_scan = file_queue.get(timeout=0.01)  # Timeout to avoid blocking indefinitely
+                path_to_scan = results_queue.get(timeout=0.01)  # Timeout to avoid blocking indefinitely
                 print(f"Processing file: {path_to_scan}")
 
                 try:
