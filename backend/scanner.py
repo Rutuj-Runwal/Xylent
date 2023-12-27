@@ -74,28 +74,13 @@ class Scanner:
     def getTLSHHash(self, path):
         try:
             with open(path, 'rb') as f:
-                bytes_data = f.read()
                 file_size = os.path.getsize(path)
 
                 # Check if the file is empty
-                if not bytes_data:
-                    print("File is empty. Skipping TLSH hash calculation.")
+                if not file_size <= 256:
+                    print("File size is 256 bytes or less. Skipping TLSH hash calculation.")
                     return None  # Return None for an empty file
-
-                if file_size < 256:
-                    print("File size is less than 256 bytes. Skipping TLSH hash calculation.")
-                    return None  # Return None for small files
                 
-                hash_value_bytes = self.calculate_tlsh(path)
-
-                hash_value_hex = hash_value_bytes.hex()
-
-                # Check if the TLSH hash is "TNULL"
-                if hash_value_hex == "TNULL":
-                    print("TLSH hash is TNULL. Skipping TLSH-based detection.")
-                    return None
-
-                return hash_value_hex # Return only the hash value
         except (PermissionError, OSError):
             print("Permission Error or OS Error. Skipping TLSH hash calculation.")
             return None
@@ -161,7 +146,7 @@ class Scanner:
               return "SKIPPED"
             # Check if the file is empty or size is 256 bytes or less
             if file_size <= 256:
-             print("File is empty or size is 256 bytes or less. Skipping.")
+             print("File size is 256 bytes or less. Skipping.")
              return "SKIPPED"
 
             if hashToChk == "XYLENT_PERMISSION_ERROR":
