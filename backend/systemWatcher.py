@@ -31,7 +31,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     def on_mouse_click(x, y, button, pressed):
         path_to_scan = get_file_path_from_click(x, y)
         print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
-    
         if path_to_scan is not None:
             file_queue.put(path_to_scan)  # Enqueue the file for processing
 
@@ -44,7 +43,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     def process_file_queue():
         while thread_resume.is_set():
             try:
-                path_to_scan = file_queue.get(timeout=0.01)  # Timeout to avoid blocking indefinitely
+                path_to_scan = file_queue.get
                 print(f"Processing file: {path_to_scan}")
 
                 try:
