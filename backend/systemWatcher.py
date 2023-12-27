@@ -43,7 +43,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     def process_file_queue():
         while thread_resume.is_set():
             try:
-                path_to_scan = file_queue.get
+                path_to_scan = file_queue.get()
                 print(f"Processing file: {path_to_scan}")
 
                 try:
