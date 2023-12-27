@@ -64,17 +64,18 @@ class Scanner:
      except TypeError:
         return False
 
-    def calculate_tlsh(self,file_path):
-      try:
-         with open(file_path, "rb") as file:
+    def calculate_tlsh(self, file_path):
+     try:
+        with open(file_path, "rb") as file:
             file_data = file.read()
+        if file_data:
             tlsh_value = tlsh.hash(file_data)
-         return tlsh_value
-      except (PermissionError, OSError) as e:
-        print(f"Error calculating TLSH for {file_path}: {e}")
-        return None
-      except Exception as e:
-        print(f"An unexpected error occurred while calculating TLSH for {file_path}: {e}")
+            return tlsh_value
+        else:
+            print("File is empty. Skipping TLSH hash calculation.")
+            return None
+     except (PermissionError, OSError):
+        print("Permission Error or OS Error. Skipping TLSH hash calculation.")
         return None
 
     def getTLSHHash(self, path):
