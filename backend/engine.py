@@ -6,7 +6,6 @@ from suspiciousWPDetector import SuspiciousWPDetector
 from systemWatcher import systemWatcher
 from concurrent.futures import ThreadPoolExecutor
 import threading
-
 # Compile ato executable with: pyinstaller -F engine.py --hidden-import pywin32 --hidden-import notify-py --uac-admin
 app = Flask(__name__)
 
@@ -110,13 +109,13 @@ with app.app_context():
 XylentScanner = Scanner(sha256_signatures=sha256_signatures_data, md5_signatures=md5_signatures_data, tlsh_signatures=tlsh_signatures_data, yara_rules=yara_rules, rootPath=app.root_path)
 def startSystemWatcher(thread_resume):
     thread_resume.set()
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        # Submit the systemWatcher function to the ThreadPoolExecutor
-        future = executor.submit(systemWatcher, XylentScanner, SYSTEM_DRIVE, thread_resume)
+    systemWatcher(XylentScanner,SYSTEM_DRIVE,thread_resume)
+
 thread_resume = threading.Event()
 realTime_thread = threading.Thread(
     target=startSystemWatcher,args=(thread_resume,))
 realTime_thread.start()
+
 @app.route("/setUserSetting",methods=['POST'])
 def setUserSetting():
     data = request.json
@@ -132,10 +131,12 @@ def setUserSetting():
             print("RTP Set!")
     return "Config Applied!"
 
-@app.route("/getActiveProcesses", methods=['GET'])
+
+
+@app.route("/getActiveProcesses",methods=['GET'])
 def activeProcess():
     import subprocess
-    cmd = 'powershell "gps | where {$_.MainWindowTitle } | select ProcessName,Description,Id,Path"'
+    cmd = r'powershell "gps | where {$_.MainWindowTitle } | select ProcessName,Description,Id,Path'
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     ans = []
     for line in proc.stdout:
@@ -149,7 +150,7 @@ def startupItems():
     import subprocess
     # cmd = 'wmic startup list brief'
     # cmd = "reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Run"
-    cmd = "reg query HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
+    cmd = r"reg query HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     data = []
     for line in proc.stdout:
@@ -278,7 +279,7 @@ def addFirewallRules(url):
                     rule = "netsh advfirewall firewall add rule name='XYLENT_AV_IP_RULE' Dir=Out Action=Block RemoteIP="+ip.rstrip()
                     # print(rule)
                     process = subprocess.run(
-                        ['Powershell', '-Command', rule], stdout=subprocess.PIPE, encoding='latin-1')
+                        ['Powershell', '-Command', rule], stdout=subprocess.PIPE, encoding='utf-8')
                     realtime_output = process.stdout
                     if realtime_output == '' and process.poll() is not None:
                         break
@@ -300,8 +301,8 @@ def cleanJunk():
     import time
     import shutil
     localTempPath = R"${TEMP}"
-    windowsTempPath = SYSTEM_DRIVE+"\Windows\Temp"
-    prefetchPath = SYSTEM_DRIVE+"\Windows\Prefetch"
+    windowsTempPath = SYSTEM_DRIVE + r"\Windows\Temp"
+    prefetchPath = SYSTEM_DRIVE + r"\Windows\Prefetch"
     now = time.time()
     size = 0
     root = [prefetchPath, os.path.expandvars(localTempPath), windowsTempPath]
