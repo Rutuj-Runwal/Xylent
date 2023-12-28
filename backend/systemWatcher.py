@@ -252,18 +252,20 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Start the thread for processing mouse events concurrently
     with concurrent.futures.ThreadPoolExecutor() as executor:
         mouse_listener_future = executor.submit(lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
-        process_mouse_events_future = executor.submit(process_mouse_events)
+        process_mouse_events_future = executor.submit(lambda: process_mouse_events())
+
     # Start the thread for processing file events concurrently
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        file_monitor_future = executor.submit(file_monitor)
-        process_mouse_events_future = executor.submit(process_file_monitor_events)
+        file_monitor_future = executor.submit(lambda: file_monitor())
+        process_file_events_future = executor.submit(lambda: process_file_monitor_events())
+
     # Start the watch processes thread concurrently
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        watch_processes_future = executor.submit(watch_processes)
-        new_process_future = executor.submit( process_new_process_events)()
+        watch_processes_future = executor.submit(lambda: watch_processes())
+        new_process_future = executor.submit(lambda: process_new_process_events())
 
     # Wait for all threads to finish
-    concurrent.futures.wait([mouse_listener_future, process_mouse_events_future, file_monitor_future, watch_processes_future,new_process_future])
+    concurrent.futures.wait([mouse_listener_future, process_mouse_events_future, file_monitor_future, process_file_events_future, watch_processes_future, new_process_future])
 
     if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
         XYLENT_SCAN_CACHE.purge()
