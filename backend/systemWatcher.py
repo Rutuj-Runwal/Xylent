@@ -101,7 +101,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         path_to_scan = get_file_path_from_click(x, y)
         print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
     
-        if path_to_scan is not None:
+     if path_to_scan is not None:
             mouse_queue.put(path_to_scan)  # Put the result in the queue
 
     def get_file_path_from_click(x, y):
@@ -243,11 +243,11 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
             message = f"Path: {exe}, Parent Process Path: {parent_path}, Command Line: {cmdline}"
 
-            # Print to the console
-            print("New Process Detected:", message)
+        # Print to the console
+        print("New Process Detected:", message)
 
             # Check if the command line includes paths
-            if isinstance(cmdline, list):  # Ensure cmdline is a list
+        if isinstance(cmdline, list):  # Ensure cmdline is a list
                 paths = [arg for arg in cmdline if os.path.isabs(arg) and os.path.exists(arg)]
                 if paths:
                     print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
