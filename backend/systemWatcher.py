@@ -5,7 +5,6 @@ import win32gui
 import win32api
 import win32process
 import pynput.mouse
-import threading
 import queue
 from queue import Queue
 import psutil
@@ -22,7 +21,6 @@ XYLENT_NEW_PROCESS_INFO = ParseJson('./config', 'new_processes.json', {})
 # Add global declarations for 'printed_processes' and 'previous_list'
 printed_processes = set()
 previous_list = set()
-results_queue = Queue()  # Define results_queue as a global variable
 
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
@@ -35,7 +33,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     
         if path_to_scan is not None:
             result = XylentScanner.scanFile(path_to_scan)
-            results_queue.put(result)  # Put the result in the queue
+            file_queue.put(result)  # Put the result in the queue
 
     def get_file_path_from_click(x, y):
         hwnd = win32gui.WindowFromPoint((x, y))
@@ -53,7 +51,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     if os.path.isfile(path_to_scan):
                         verdict = XylentScanner.scanFile(path_to_scan)
                         XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
-                        results_queue.put(verdict)  # Put the result in the queue
                         print(f"Scanned and cached: {path_to_scan}")
                 except Exception as e:
                     print(e)
@@ -101,7 +98,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 path_to_scan = os.path.join(path_to_watch, file)
                 print(path_to_scan)  # Print the path for debugging purposes
                 result = XylentScanner.scanFile(path_to_scan)
-                results_queue.put(result)  # Put the result in the queue
+                file_queue.put(result)  # Put the result in the queue
 
     def watch_processes():
         global printed_processes
@@ -132,7 +129,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 if newly_started_processes:
                     with concurrent.futures.ThreadPoolExecutor() as executor:
                         # Submit each task individually and pass the required arguments
-                        futures = [executor.submit(new_process_checker, info, XylentScanner, results_queue) for info in newly_started_processes]
+                        futures = [executor.submit(new_process_checker, info, XylentScanner) for info in newly_started_processes]
                         concurrent.futures.wait(futures)
 
                     # Print new processes once
@@ -174,7 +171,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 print(f"Error getting process info: {e}")
         return processes
 
-    def new_process_checker(process_info, XylentScanner, results_queue):
+    def new_process_checker(process_info, XylentScanner):
         global printed_processes
 
         # process_info is a tuple (exe, cmdline, pid)
@@ -212,11 +209,11 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     # Assuming you have a method named 'scanFile' in your Scanner class
                     for path in paths:
                         result = XylentScanner.scanFile(path)
-                        results_queue.put(result)  # Put the result in the queue
+                        file_queue.put(result)  # Put the result in the queue
         # Include the running file itself in the path_to_scan
         path_to_scan = exe
         result = XylentScanner.scanFile(path_to_scan)
-        results_queue.put(result)  # Put the result in the queue
+        file_queue.put(result)  # Put the result in the queue
 
     def get_parent_process_info(file_path):
         try:
