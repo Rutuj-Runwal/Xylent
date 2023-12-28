@@ -46,7 +46,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     def process_file_queue():
         while thread_resume.is_set():
             try:
-                path_to_scan = file_queue.get()  # Timeout may cause lag ironically
+                path_to_scan = file_queue.get()  # Timeout causes lag ironically so don't use timeout
                 print(f"Processing file: {path_to_scan}")
 
                 try:
