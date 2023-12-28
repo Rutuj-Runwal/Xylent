@@ -23,52 +23,6 @@ XYLENT_NEW_PROCESS_INFO = ParseJson('./config', 'new_processes.json', {})
 printed_processes = set()  # Global variable to store printed processes
 previous_list = set()
 
-def new_main_program(XylentScanner):
-    global printed_processes, previous_list  # Add global declarations here
-
-    # Print the initially running processes
-    print("Initially running processes:")
-    print(get_running_processes())
-
-    # Move initialization here if needed
-    printed_processes = set()
-
-    # Load new processes using ParseJson
-    new_processes = load_new_processes()
-
-    # Initialize a queue to collect results
-    results_queue = Queue()
-
-    while True:
-        try:
-            # Get current running processes
-            current_list = get_running_processes()
-
-            # Compare with the previous list and find new processes
-            newly_started_processes = current_list - previous_list
-            new_processes.update(dict.fromkeys(newly_started_processes))  # Update the dictionary
-
-            if newly_started_processes:
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    # Submit each task individually and pass the required arguments
-                    futures = [executor.submit(new_process_checker, info, XylentScanner, results_queue) for info in newly_started_processes]
-                    concurrent.futures.wait(futures)
-
-            # Update the previous list
-            previous_list = current_list
-
-            # Save the updated new processes list to the file using ParseJson
-            save_new_processes(list(new_processes))  # Convert the dictionary keys to a list
-
-            # Print results outside the executor after it's done
-            print("Results:", printed_processes)
-
-            # Additional print statement to check the loop
-            print("Waiting for a short period before checking again...")
-            time.sleep(0.1)
-        except Exception as e:
-            print(f"Error in new_main_program: {e}")
-
 def load_new_processes():
     try:
         return XYLENT_NEW_PROCESS_INFO.parseDataFile([])
@@ -92,48 +46,6 @@ def get_running_processes():
         except Exception as e:
             print(f"Error getting process info: {e}")
     return processes
-
-#Initialize a queue to collect results
-results_queue = Queue()
-
-def new_process_checker(process_info, XylentScanner, results_queue):
-    global printed_processes
-
-    # process_info is a tuple (exe, cmdline, pid)
-    exe, cmdline, pid = process_info
-
-    if exe not in printed_processes:
-            # Print the running file only once
-            print(f"Running File: {exe}")
-            printed_processes.add(exe)
-
-            parent_process_info = get_parent_process_info(pid)
-            if parent_process_info is None or parent_process_info.get('exe') is None:
-                return  # Skip processing if parent process info is None or has no executable information
-
-            parent_path = parent_process_info['exe']
-
-            # Check if parent and child have the same location
-            if parent_path != "Unknown" and exe.startswith(parent_path):
-                return  # Skip processing if they have the same location
-
-            # Check if parent and child have the same full path
-            if os.path.abspath(exe) == os.path.abspath(parent_path):
-                return  # Skip processing if they have the same full path
-
-            message = f"Path: {exe}, Parent Process Path: {parent_path}, Command Line: {cmdline}"
-
-            # Print to the console
-            print("New Process Detected:", message)
-
-            # Check if the command line includes paths
-            paths = [arg for arg in cmdline if os.path.isabs(arg) and os.path.exists(arg)]
-            if paths:
-                print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
-                # Assuming you have a method named 'scanFile' in your Scanner class
-                for path in paths:
-                    result = XylentScanner.scanFile(path)
-                    results_queue.put(result)  # Put the result in the queue
 
 def get_parent_process_info(file_path):
     try:
@@ -230,6 +142,53 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
                 XYLENT_SCAN_CACHE.purge()
                 print("Purging")
+    def new_process_checker(process_info):
+        global printed_processes
+
+        # process_info is a tuple (exe, cmdline, pid)
+        exe, cmdline, pid = process_info
+
+        if exe not in printed_processes:
+            # Print the running file only once
+            print(f"Running File: {exe}")
+            printed_processes.add(exe)
+
+            parent_process_info = get_parent_process_info(pid)
+            # If there is no parent process information or it has no executable information, skip processing
+            if parent_process_info is None or parent_process_info.get('exe') is None:
+                return  # Skip processing if parent process info is None or has no executable information
+
+            parent_path = parent_process_info['exe']
+
+            # Check if parent and child have the same location
+            if parent_path != "Unknown" and exe.startswith(parent_path):
+                return  # Skip processing if they have the same location
+
+            # Check if parent and child have the same full path
+            if os.path.abspath(exe) == os.path.abspath(parent_path):
+                return  # Skip processing if they have the same full path
+
+            message = f"Path: {exe}, Parent Process Path: {parent_path}, Command Line: {cmdline}"
+
+            # Print to the console
+            print("New Process Detected:", message)
+
+            # Check if the command line includes paths
+            if isinstance(cmdline, list):  # Ensure cmdline is a list
+                paths = [arg for arg in cmdline if os.path.isabs(arg) and os.path.exists(arg)]
+                if paths:
+                    print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
+                    # Assuming you have a method named 'scanFile' in your Scanner class
+                    for path in paths:
+                        print(f"Scanning file: {path}")
+                        file_queue.put(path)
+            # Include the running file itself in the path_to_scan
+            path_to_scan = exe
+            print(f"Scanning file: {path_to_scan}")
+            file_queue.put(path_to_scan)
+
+            # Set verdict for the parent_path
+            file_queue.put(parent_path)
     def watch_processes():
         global printed_processes
         global previous_list
