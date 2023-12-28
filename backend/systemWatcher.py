@@ -27,6 +27,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
     XYLENT_CACHE_MAXSIZE = 500000  # 500KB
     file_queue = Queue()
+    mouse_queue = Queue()
 
     def on_mouse_click(x, y, button, pressed):
      while thread_resume.wait():
@@ -34,13 +35,35 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
     
         if path_to_scan is not None:
-            file_queue.put(path_to_scan)  # Put the result in the queue
+            mouse_queue.put(path_to_scan)  # Put the result in the queue
 
     def get_file_path_from_click(x, y):
         hwnd = win32gui.WindowFromPoint((x, y))
         pid = win32process.GetWindowThreadProcessId(hwnd)[1]
         handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
         return win32process.GetModuleFileNameEx(handle, 0)
+    
+    def process_mouse_queue():
+        while thread_resume.wait():
+            try:
+                path_to_scan = mouse_queue.get()  # Timeout causes lag ironically so don't use timeout
+                print(f"Processing file: {path_to_scan}")
+
+                try:
+                    if os.path.isfile(path_to_scan):
+                        verdict = XylentScanner.scanFile(path_to_scan)
+                        XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+                        print(f"Scanned and cached: {path_to_scan}")
+                except Exception as e:
+                    print(e)
+                    print(f"Error scanning {path_to_scan}")
+
+            except queue.Empty:
+                pass  # Queue is empty, continue checking
+
+            if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
+                XYLENT_SCAN_CACHE.purge()
+                print("Purging")
 
     def process_file_queue():
         while thread_resume.wait():
@@ -238,12 +261,12 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Submit tasks to the ThreadPoolExecutor
      mouse_listener_future = executor.submit(pynput.mouse.Listener, on_click=on_mouse_click)
      monitor_thread_future = executor.submit(file_monitor)
-     process_queue_thread_future = executor.submit(process_file_queue)
      watch_processes_thread_future = executor.submit(watch_processes)
-
+     process_queue_thread_future = executor.submit(process_file_queue)
+     mouse_queue_thread_future = executor.submit(process_mouse_queue)
     # Wait for all tasks to complete
      concurrent.futures.wait(
-         [mouse_listener_future, monitor_thread_future, process_queue_thread_future, watch_processes_thread_future],
+         [mouse_listener_future, monitor_thread_future, process_queue_thread_future, watch_processes_thread_future,mouse_queue_thread_future],
          return_when=concurrent.futures.ALL_COMPLETED
      )
  
