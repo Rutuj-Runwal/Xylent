@@ -259,8 +259,8 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         process_mouse_events_future = executor.submit(process_file_monitor_events)
     # Start the watch processes thread concurrently
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        new_process_future = executor.submit( process_new_process_events)()
         watch_processes_future = executor.submit(watch_processes)
+        new_process_future = executor.submit( process_new_process_events)()
 
     # Wait for all threads to finish
     concurrent.futures.wait([mouse_listener_future, process_mouse_events_future, file_monitor_future, watch_processes_future,new_process_future])
