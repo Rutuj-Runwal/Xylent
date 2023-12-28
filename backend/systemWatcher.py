@@ -23,11 +23,13 @@ printed_processes = set()
 previous_list = set()
 
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
+    print("Real-time protection thread started")
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
     XYLENT_CACHE_MAXSIZE = 500000  # 500KB
     file_queue = Queue()
 
     def on_mouse_click(x, y, button, pressed):
+     while thread_resume.wait():
         path_to_scan = get_file_path_from_click(x, y)
         print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
     
@@ -42,6 +44,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         return win32process.GetModuleFileNameEx(handle, 0)
 
     def process_file_queue():
+        while thread_resume.wait():
             try:
                 path_to_scan = file_queue.get()  # Timeout causes lag ironically so don't use timeout
                 print(f"Processing file: {path_to_scan}")
@@ -63,6 +66,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 print("Purging")
 
     def file_monitor():
+        while thread_resume.wait():
             # File monitoring
             path_to_watch = SYSTEM_DRIVE + "\\"
             hDir = win32file.CreateFile(
@@ -104,6 +108,8 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
         # Print the initially running processes
         initial_processes = get_running_processes()
+        print("Initially running processes:")
+        print(initial_processes)
 
         printed_processes = set()
 
@@ -112,7 +118,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
         # Initialize previous_list
         previous_list = initial_processes
-        try:
+
+        while thread_resume.wait():
+            try:
                 # Get current running processes
                 current_list = get_running_processes()
 
@@ -138,7 +146,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
                 # Save the updated new processes list to the file using ParseJson
                 save_new_processes(list(new_processes))
-        except Exception as e:
+            except Exception as e:
                 print(f"Error in watch_processes: {e}")
 
     def load_new_processes():
@@ -244,21 +252,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
          return_when=concurrent.futures.ALL_COMPLETED
      )
  
-    # Start the main loop
-    while thread_resume.is_set():
-        try:
-            # Handle mouse events
-            with pynput.mouse.Listener(on_click=on_mouse_click):
-                # Monitor file changes
-                file_monitor()
-
-                # Process file queue
-                process_file_queue()
-
-                # Watch processes
-                watch_processes()
-
-        except Exception as e:
-            print(f"Error in the main loop: {e}")
+     mouse_listener_future.result()  # Wait for the mouse listener to finish
+     monitor_thread_future.result()  # Wait for the file monitor to finish
+     process_queue_thread_future.result()  # Wait for the file processing thread to finish
+     watch_processes_thread_future.result()  # Wait for the process monitoring thread to finish
 
     print("RTP waiting to start")
