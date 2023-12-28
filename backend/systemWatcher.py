@@ -239,21 +239,23 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
         return None
 
-    mouse_listener = threading.Thread(target=lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
-    mouse_listener.start()
+    # Create a ThreadPoolExecutor
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+    # Submit tasks to the ThreadPoolExecutor
+     mouse_listener_future = executor.submit(pynput.mouse.Listener, on_click=on_mouse_click)
+     monitor_thread_future = executor.submit(file_monitor)
+     process_queue_thread_future = executor.submit(process_file_queue)
+     watch_processes_thread_future = executor.submit(watch_processes)
 
-    monitor_thread = threading.Thread(target=file_monitor)
-    monitor_thread.start()
+    # Wait for all tasks to complete
+     concurrent.futures.wait(
+         [mouse_listener_future, monitor_thread_future, process_queue_thread_future, watch_processes_thread_future],
+         return_when=concurrent.futures.ALL_COMPLETED
+     )
+ 
+     mouse_listener_future.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
+     monitor_thread_future.join()  # Wait for the file monitor to finish
+     process_queue_thread_future.join()  # Wait for the file processing thread to finish
+     watch_processes_thread_future.join()  # Wait for the process monitoring thread to finish
 
-    process_queue_thread = threading.Thread(target=process_file_queue)
-    process_queue_thread.start()
-
-    watch_processes_thread = threading.Thread(target=watch_processes)
-    watch_processes_thread.start()
-
-    mouse_listener.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
-    monitor_thread.join()  # Wait for the file monitor to finish
-    process_queue_thread.join()  # Wait for the file processing thread to finish
-    watch_processes_thread.join()  # Wait for the process monitoring thread to finish
-
-    print("RTP waiting to start...")
+    print("RTP waiting to start")
