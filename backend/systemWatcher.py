@@ -8,7 +8,6 @@ import pynput.mouse
 import queue
 from queue import Queue
 import psutil
-import concurrent.futures
 from parseJson import ParseJson
 
 FILE_ACTION_ADDED = 0x00000001
@@ -28,10 +27,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     file_queue = Queue()
 
     def on_mouse_click(x, y, button, pressed):
-     while thread_resume.wait():
         path_to_scan = get_file_path_from_click(x, y)
         print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
-    
+
         if path_to_scan is not None:
             result = XylentScanner.scanFile(path_to_scan)
             file_queue.put(result)  # Put the result in the queue
@@ -43,7 +41,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         return win32process.GetModuleFileNameEx(handle, 0)
 
     def process_file_queue():
-        while thread_resume.wait():
+        while thread_resume:
             try:
                 path_to_scan = file_queue.get()  # Timeout causes lag ironically so don't use timeout
                 print(f"Processing file: {path_to_scan}")
@@ -65,7 +63,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 print("Purging")
 
     def file_monitor():
-        while thread_resume.wait():
+        while thread_resume:
             # File monitoring
             path_to_watch = SYSTEM_DRIVE + "\\"
             hDir = win32file.CreateFile(
@@ -118,7 +116,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         # Initialize previous_list
         previous_list = initial_processes
 
-        while thread_resume.wait():
+        while thread_resume:
             try:
                 # Get current running processes
                 current_list = get_running_processes()
@@ -128,10 +126,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 new_processes.update(dict.fromkeys(newly_started_processes))
 
                 if newly_started_processes:
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        # Submit each task individually and pass the required arguments
-                        futures = [executor.submit(new_process_checker, info, XylentScanner) for info in newly_started_processes]
-                        concurrent.futures.wait(futures)
+                    # Submit each task individually and pass the required arguments
+                    for info in newly_started_processes:
+                        new_process_checker(info, XylentScanner)
 
                     # Print new processes once
                     print("Newly started processes:")
@@ -237,23 +234,19 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
         return None
 
-    # Create a ThreadPoolExecutor
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-    # Submit tasks to the ThreadPoolExecutor
-     mouse_listener_future = executor.submit(pynput.mouse.Listener, on_click=on_mouse_click)
-     monitor_thread_future = executor.submit(file_monitor)
-     process_queue_thread_future = executor.submit(process_file_queue)
-     watch_processes_thread_future = executor.submit(watch_processes)
+    # Start the main loop
+    while thread_resume:
+        try:
+            # Handle mouse events
+            with pynput.mouse.Listener(on_click=on_mouse_click) as mouse_listener:
+                # Monitor file changes
+                file_monitor()
 
-    # Wait for all tasks to complete
-     concurrent.futures.wait(
-         [mouse_listener_future, monitor_thread_future, process_queue_thread_future, watch_processes_thread_future],
-         return_when=concurrent.futures.ALL_COMPLETED
-     )
- 
-     mouse_listener_future.result()  # Wait for the mouse listener to finish
-     monitor_thread_future.result()  # Wait for the file monitor to finish
-     process_queue_thread_future.result()  # Wait for the file processing thread to finish
-     watch_processes_thread_future.result()  # Wait for the process monitoring thread to finish
+                # Process file queue
+                process_file_queue()
 
-    print("RTP waiting to start")
+                # Watch processes
+                watch_processes()
+
+        except Exception as e:
+            print(f"Error in the main loop: {e}")
