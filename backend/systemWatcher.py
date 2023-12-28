@@ -4,7 +4,8 @@ import win32con
 import win32gui
 import win32api
 import win32process
-from pynput import mouse
+import pynput.mouse
+import threading
 import queue
 from queue import Queue
 import psutil
@@ -23,72 +24,47 @@ printed_processes = set()
 previous_list = set()
 
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
-    print("Real-time protection thread started")
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
     XYLENT_CACHE_MAXSIZE = 500000  # 500KB
     file_queue = Queue()
-    mouse_queue = Queue()
-
-    def process_mouse_queue():
-        while thread_resume.wait():
-            try:
-                path_to_scan = mouse_queue.get()  # Timeout causes lag ironically so don't use timeout
-                print(f"Processing file (mouse): {path_to_scan}")
-
-                try:
-                    if os.path.isfile(path_to_scan):
-                        verdict = XylentScanner.scanFile(path_to_scan)
-                        XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
-                        print(f"Scanned and cached (mouse): {path_to_scan}")
-                except Exception as e:
-                    print(e)
-                    print(f"Error scanning {path_to_scan}")
-
-            except queue.Empty:
-                pass  # Queue is empty, continue checking
-
-            if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
-                XYLENT_SCAN_CACHE.purge()
-                print("Purging")
-
-    def process_file_queue():
-        while thread_resume.wait():
-            try:
-                path_to_scan = file_queue.get()  # Timeout causes lag ironically so don't use timeout
-                print(f"Processing file (file): {path_to_scan}")
-
-                try:
-                    if os.path.isfile(path_to_scan):
-                        verdict = XylentScanner.scanFile(path_to_scan)
-                        XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
-                        print(f"Scanned and cached (file): {path_to_scan}")
-                except Exception as e:
-                    print(e)
-                    print(f"Error scanning {path_to_scan}")
-
-            except queue.Empty:
-                pass  # Queue is empty, continue checking
-
-            if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
-                XYLENT_SCAN_CACHE.purge()
-                print("Purging")
 
     def on_mouse_click(x, y, button, pressed):
-     while thread_resume.wait():
-      path_to_scan = get_file_path_from_click(x, y)
-     print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
+        path_to_scan = get_file_path_from_click(x, y)
+        print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
     
-     if path_to_scan is not None:
-            mouse_queue.put(path_to_scan)  # Put the result in the queue
+        if path_to_scan is not None:
+            file_queue.put(path_to_scan)
 
     def get_file_path_from_click(x, y):
         hwnd = win32gui.WindowFromPoint((x, y))
         pid = win32process.GetWindowThreadProcessId(hwnd)[1]
         handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
         return win32process.GetModuleFileNameEx(handle, 0)
-    
+
+    def process_file_queue():
+        while thread_resume.is_set():
+            try:
+                path_to_scan = file_queue.get(timeout=0.01)  # Timeout to avoid blocking indefinitely
+                print(f"Processing file: {path_to_scan}")
+
+                try:
+                    if os.path.isfile(path_to_scan):
+                        verdict = XylentScanner.scanFile(path_to_scan)
+                        XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+                        print(f"Scanned and cached: {path_to_scan}")
+                except Exception as e:
+                    print(e)
+                    print(f"Error scanning {path_to_scan}")
+
+            except queue.Empty:
+                pass  # Queue is empty, continue checking
+
+            if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
+                XYLENT_SCAN_CACHE.purge()
+                print("Purging")
+
     def file_monitor():
-        while thread_resume.wait():
+        while thread_resume.is_set():
             # File monitoring
             path_to_watch = SYSTEM_DRIVE + "\\"
             hDir = win32file.CreateFile(
@@ -120,7 +96,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
             for action, file in results:
                 path_to_scan = os.path.join(path_to_watch, file)
-                file_queue.put(path_to_scan)  # Put the result in the queue
+                file_queue.put(path_to_scan)
 
     def watch_processes():
         global printed_processes
@@ -151,7 +127,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 if newly_started_processes:
                     with concurrent.futures.ThreadPoolExecutor() as executor:
                         # Submit each task individually and pass the required arguments
-                        futures = [executor.submit(new_process_checker, info, XylentScanner) for info in newly_started_processes]
+                        futures = [executor.submit(new_process_checker, info) for info in newly_started_processes]
                         concurrent.futures.wait(futures)
 
                     # Print new processes once
@@ -193,7 +169,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 print(f"Error getting process info: {e}")
         return processes
 
-    def new_process_checker(process_info, XylentScanner):
+    def new_process_checker(process_info):
         global printed_processes
 
         # process_info is a tuple (exe, cmdline, pid)
@@ -203,8 +179,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             # Print the running file only once
             print(f"Running File: {exe}")
             printed_processes.add(exe)
-            # Include the running file itself in the path_to_scan
-            file_queue.put(exe)  # Put the result in the queue
+            file_queue.put(exe)
             parent_process_info = get_parent_process_info(pid)
             if parent_process_info is None or parent_process_info.get('exe') is None:
                 return  # Skip processing if parent process info is None or has no executable information
@@ -221,11 +196,11 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
             message = f"Path: {exe}, Parent Process Path: {parent_path}, Command Line: {cmdline}"
 
-        # Print to the console
-        print("New Process Detected:", message)
-
+            # Print to the console
+            print("New Process Detected:", message)
+                
             # Check if the command line includes paths
-        if isinstance(cmdline, list):  # Ensure cmdline is a list
+            if isinstance(cmdline, list):  # Ensure cmdline is a list
                 paths = [arg for arg in cmdline if os.path.isabs(arg) and os.path.exists(arg)]
                 if paths:
                     print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
@@ -254,22 +229,21 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
         return None
 
-    # Create a ThreadPoolExecutor
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-    # Submit tasks to the ThreadPoolExecutor
-     mouse_listener_future = mouse.Listener(on_click=on_mouse_click)
-     monitor_thread_future = executor.submit(file_monitor)
-     watch_processes_thread_future = executor.submit(watch_processes)
-     mouse_queue_thread_future = executor.submit(process_mouse_queue)
-     process_queue_thread_future = executor.submit(process_file_queue)
-    # Wait for all tasks to complete
-    concurrent.futures.wait(
-         [mouse_listener_future, monitor_thread_future, process_queue_thread_future, watch_processes_thread_future,mouse_queue_thread_future],
-     )
- 
-    mouse_listener_future.result()  # Wait for the mouse listener to finish
-    monitor_thread_future.result()  # Wait for the file monitor to finish
-    process_queue_thread_future.result()  # Wait for the file processing thread to finish
-    watch_processes_thread_future.result()  # Wait for the process monitoring thread to finish
+    mouse_listener = threading.Thread(target=lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
+    mouse_listener.start()
 
-    print("RTP waiting to start")
+    monitor_thread = threading.Thread(target=file_monitor)
+    monitor_thread.start()
+
+    process_queue_thread = threading.Thread(target=process_file_queue)
+    process_queue_thread.start()
+
+    watch_processes_thread = threading.Thread(target=watch_processes)
+    watch_processes_thread.start()
+
+    mouse_listener.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
+    monitor_thread.join()  # Wait for the file monitor to finish
+    process_queue_thread.join()  # Wait for the file processing thread to finish
+    watch_processes_thread.join()  # Wait for the process monitoring thread to finish
+
+    print("RTP waiting to start...")
