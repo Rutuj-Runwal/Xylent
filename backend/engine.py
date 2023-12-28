@@ -1,6 +1,6 @@
 import os
 import yara
-from flask import request,g,Flask,Response
+from flask import request,Flask,Response
 from scanner import Scanner
 from suspiciousWPDetector import SuspiciousWPDetector
 from systemWatcher import systemWatcher
@@ -100,7 +100,6 @@ def load_yara_rules_in_thread():
     with app.app_context():
         compiled_rules = load_yara_rules(yara_folder_path)
         loading_complete(compiled_rules)
-
 # Call load_yara_rules_in_thread to initiate the loading process in a separate thread
 load_yara_rules_in_thread()
 with app.app_context():
@@ -109,27 +108,32 @@ with app.app_context():
 XylentScanner = Scanner(sha256_signatures=sha256_signatures_data, md5_signatures=md5_signatures_data, tlsh_signatures=tlsh_signatures_data, yara_rules=yara_rules, rootPath=app.root_path)
 
 def startSystemWatcher(thread_resume):
+    thread_resume = threading.Event()
     thread_resume.set()
     systemWatcher(XylentScanner,SYSTEM_DRIVE,thread_resume)
-
 thread_resume = threading.Event()
 realTime_thread = threading.Thread(
     target=startSystemWatcher,args=(thread_resume,))
 realTime_thread.start()
 
-@app.route("/setUserSetting",methods=['POST'])
+@app.route("/setUserSetting", methods=['POST'])
 def setUserSetting():
     data = request.json
     SETTING = data['setting']
     VALUE = data['value']
-    print(VALUE)
-    if SETTING=="Real Time Protection":
-        if VALUE==True:
-            # Start (Real time protection)[RTP] thread to restore file
+
+    print(f"Received setting: {SETTING}, value: {VALUE}")
+
+    if SETTING == "Real Time Protection":
+        if VALUE == True:
+            print("Starting Real-time protection thread")
+            # Start (Real-time protection)[RTP] thread to restore file
             thread_resume.set()
         else:
+            print("Stopping Real-time protection thread")
+            # Stop (Real-time protection)[RTP] thread
             thread_resume.clear()
-            print("RTP Set!")
+
     return "Config Applied!"
 
 @app.route("/getActiveProcesses",methods=['GET'])
