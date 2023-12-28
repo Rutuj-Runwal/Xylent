@@ -26,6 +26,10 @@ previous_list = set()
 
 # Create a queue for mouse events
 mouse_event_queue = Queue()
+#Create a queue for file events
+file_event_queue = Queue()
+#Create a queue for new events
+new_event_queue = Queue()
 
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     def on_mouse_click(x, y, button, pressed):
@@ -74,8 +78,17 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             for action, file in results:
                 path_to_scan = os.path.join(path_to_watch, file)
                 print(f"Scanning file: {path_to_scan}")
+                file_event_queue.get(path_to_scan)
+
+    def process_file_monitor_events():
+        while thread_resume.is_set():
+            try:
+                # Retrieve mouse events from the queue
+                path_to_scan = file_event_queue.get()
                 verdict = XylentScanner.scanFile(path_to_scan)
                 XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+            except Exception as e:
+                print(f"Error in process_file_monitor_events: {e}")
 
     def process_mouse_events():
         while thread_resume.is_set():
@@ -197,16 +210,23 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     # Assuming you have a method named 'scanFile' in your Scanner class
                     for path in paths:
                         print(f"Scanning file: {path}")
-                        verdict = XylentScanner.scanFile(path)
-                        XYLENT_SCAN_CACHE.setVal(path, verdict)
+                        new_event_queue(path)
             # Include the running file itself in the path_to_scan
             path_to_scan = exe
             print(f"Scanning file: {path_to_scan}")
-            verdict = XylentScanner.scanFile(path_to_scan)
-            XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
-            
+            new_event_queue.put(path_to_scan)
+
             # Set verdict for the parent_path
-            XYLENT_SCAN_CACHE.setVal(parent_path,verdict)
+            new_event_queue.put(parent_path)
+        def process_new_process_events():
+         while thread_resume.is_set():
+            try:
+                # Retrieve mouse events from the queue
+                path_to_scan = new_event_queue.get()
+                verdict = XylentScanner.scanFile(path_to_scan)
+                XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+            except Exception as e:
+                print(f"Error in process_new_process_events: {e}")
 
     def get_parent_process_info(file_path):
         try:
@@ -233,17 +253,17 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         mouse_listener_future = executor.submit(lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
         process_mouse_events_future = executor.submit(process_mouse_events)
-
-    # Start the file monitor thread concurrently
+    # Start the thread for processing file events concurrently
     with concurrent.futures.ThreadPoolExecutor() as executor:
         file_monitor_future = executor.submit(file_monitor)
-
+        process_mouse_events_future = executor.submit(process_file_monitor_events)
     # Start the watch processes thread concurrently
     with concurrent.futures.ThreadPoolExecutor() as executor:
+        new_process_future = executor.submit(new_process_checker)
         watch_processes_future = executor.submit(watch_processes)
 
     # Wait for all threads to finish
-    concurrent.futures.wait([mouse_listener_future, process_mouse_events_future, file_monitor_future, watch_processes_future])
+    concurrent.futures.wait([mouse_listener_future, process_mouse_events_future, file_monitor_future, watch_processes_future,new_process_future])
 
     if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
         XYLENT_SCAN_CACHE.purge()
