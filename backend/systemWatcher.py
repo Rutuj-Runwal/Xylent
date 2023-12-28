@@ -241,7 +241,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     monitor_thread = threading.Thread(target=file_monitor)
     monitor_thread.start()
 
-    watch_thread = threading.Thread(target=watch_processes)
+    watch_thread = threading.Thread(target=new_process_checker)
     watch_thread.start()
 
     process_queue_thread = threading.Thread(target=process_file_queue)
