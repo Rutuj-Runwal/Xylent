@@ -245,7 +245,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
      )
  
     # Start the main loop
-    while thread_resume.wait():
+    while thread_resume.is_set():
         try:
             # Handle mouse events
             with pynput.mouse.Listener(on_click=on_mouse_click):
