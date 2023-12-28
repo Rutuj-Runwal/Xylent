@@ -170,6 +170,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             printed_processes.add(exe)
 
             parent_process_info = get_parent_process_info(pid)
+            # If there is no parent process information or it has no executable information, skip processing
             if parent_process_info is None or parent_process_info.get('exe') is None:
                 return  # Skip processing if parent process info is None or has no executable information
 
@@ -203,6 +204,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"Scanning file: {path_to_scan}")
             verdict = XylentScanner.scanFile(path_to_scan)
             XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+            
+            # Set verdict for the parent_path
+            XYLENT_SCAN_CACHE.setVal(parent_path,verdict)
 
     def get_parent_process_info(file_path):
         try:
