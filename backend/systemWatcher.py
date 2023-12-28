@@ -25,8 +25,7 @@ previous_list = set()
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
     XYLENT_CACHE_MAXSIZE = 500000  # 500KB
-    while thread_resume.is_set():
-     file_queue = Queue()
+    file_queue = Queue()
 
     def on_mouse_click(x, y, button, pressed):
         path_to_scan = get_file_path_from_click(x, y)
@@ -43,6 +42,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         return win32process.GetModuleFileNameEx(handle, 0)
 
     def process_file_queue():
+        while thread_resume.is_set():
             try:
                 path_to_scan = file_queue.get()  # Timeout causes lag ironically so don't use timeout
                 print(f"Processing file: {path_to_scan}")
@@ -64,6 +64,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 print("Purging")
 
     def file_monitor():
+        while thread_resume.is_set():
             # File monitoring
             path_to_watch = SYSTEM_DRIVE + "\\"
             hDir = win32file.CreateFile(
@@ -115,7 +116,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
         # Initialize previous_list
         previous_list = initial_processes
-        try:
+
+        while thread_resume.is_set():
+            try:
                 # Get current running processes
                 current_list = get_running_processes()
 
@@ -141,7 +144,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
                 # Save the updated new processes list to the file using ParseJson
                 save_new_processes(list(new_processes))
-        except Exception as e:
+            except Exception as e:
                 print(f"Error in watch_processes: {e}")
 
     def load_new_processes():
