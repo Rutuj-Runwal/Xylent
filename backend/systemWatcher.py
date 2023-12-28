@@ -182,13 +182,13 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     for path in paths:
                         print(f"Scanning file: {path}")
                         file_queue.put(path)
-            # Include the running file itself in the path_to_scan
-            path_to_scan = exe
-            print(f"Scanning file: {path_to_scan}")
-            file_queue.put(path_to_scan)
+         # Include the running file itself in the path_to_scan
+        path_to_scan = exe
+        print(f"Scanning file: {path_to_scan}")
+        file_queue.put(path_to_scan)
 
-            # Set verdict for the parent_path
-            file_queue.put(parent_path)
+        # Set verdict for the parent_path
+        file_queue.put(parent_path)
     def watch_processes():
         global printed_processes
         global previous_list
