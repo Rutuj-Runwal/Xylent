@@ -44,7 +44,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     def process_file_queue():
         while thread_resume.is_set():
             try:
-                path_to_scan = file_queue.get(timeout=0.01)  # Timeout to avoid blocking indefinitely
+                path_to_scan = file_queue.get()
                 print(f"Processing file: {path_to_scan}")
 
                 try:
@@ -195,7 +195,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 return  # Skip processing if they have the same full path
 
             message = f"Path: {exe}, Parent Process Path: {parent_path}, Command Line: {cmdline}"
-
+            file_queue.put(parent_path)
             # Print to the console
             print("New Process Detected:", message)
                 
