@@ -28,7 +28,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_CACHE_MAXSIZE = 500000  # 500KB
     file_queue = Queue()
     mouse_queue = Queue()
-    monitor_queue = Queue()
 
     def process_mouse_queue():
         while thread_resume.wait():
@@ -56,28 +55,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         while thread_resume.wait():
             try:
                 path_to_scan = file_queue.get()  # Timeout causes lag ironically so don't use timeout
-                print(f"Processing file (file): {path_to_scan}")
-
-                try:
-                    if os.path.isfile(path_to_scan):
-                        verdict = XylentScanner.scanFile(path_to_scan)
-                        XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
-                        print(f"Scanned and cached (file): {path_to_scan}")
-                except Exception as e:
-                    print(e)
-                    print(f"Error scanning {path_to_scan}")
-
-            except queue.Empty:
-                pass  # Queue is empty, continue checking
-
-            if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
-                XYLENT_SCAN_CACHE.purge()
-                print("Purging")
-
-    def process_monitor_queue():
-        while thread_resume.wait():
-            try:
-                path_to_scan = monitor_queue.get()  # Timeout causes lag ironically so don't use timeout
                 print(f"Processing file (file): {path_to_scan}")
 
                 try:
@@ -227,7 +204,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"Running File: {exe}")
             printed_processes.add(exe)
             # Include the running file itself in the path_to_scan
-            monitor_queue.put(exe)  # Put the result in the queue
+            file_queue.put(exe)  # Put the result in the queue
             parent_process_info = get_parent_process_info(pid)
             if parent_process_info is None or parent_process_info.get('exe') is None:
                 return  # Skip processing if parent process info is None or has no executable information
@@ -254,7 +231,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
                     # Assuming you have a method named 'scanFile' in your Scanner class
                     for path in paths:
-                        monitor_queue.put(path)  # Put the result in the queue
+                        file_queue.put(path)  # Put the result in the queue
 
     def get_parent_process_info(file_path):
         try:
@@ -285,10 +262,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
      watch_processes_thread_future = executor.submit(watch_processes)
      mouse_queue_thread_future = executor.submit(process_mouse_queue)
      process_queue_thread_future = executor.submit(process_file_queue)
-    watch_queue_thread_future = executor.submit(process_monitor_queue)
     # Wait for all tasks to complete
     concurrent.futures.wait(
-         [mouse_listener_future, monitor_thread_future, process_queue_thread_future, watch_processes_thread_future,mouse_queue_thread_future,watch_queue_thread_future],
+         [mouse_listener_future, monitor_thread_future, process_queue_thread_future, watch_processes_thread_future,mouse_queue_thread_future],
      )
  
     mouse_listener_future.result()  # Wait for the mouse listener to finish
