@@ -279,7 +279,7 @@ def addFirewallRules(url):
                     rule = "netsh advfirewall firewall add rule name='XYLENT_AV_IP_RULE' Dir=Out Action=Block RemoteIP="+ip.rstrip()
                     # print(rule)
                     process = subprocess.run(
-                        ['Powershell', '-Command', rule], stdout=subprocess.PIPE, encoding='utf-8')
+                        ['Powershell', '-Command', rule], stdout=subprocess.PIPE, encoding='latin-1')
                     realtime_output = process.stdout
                     if realtime_output == '' and process.poll() is not None:
                         break
