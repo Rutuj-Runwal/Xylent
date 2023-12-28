@@ -1,10 +1,9 @@
 import os
 import yara
-from flask import request,Flask,Response
+from flask import request,g,Flask,Response
 from scanner import Scanner
 from suspiciousWPDetector import SuspiciousWPDetector
 from systemWatcher import systemWatcher
-from concurrent.futures import ThreadPoolExecutor
 import threading
 # Compile ato executable with: pyinstaller -F engine.py --hidden-import pywin32 --hidden-import notify-py --uac-admin
 app = Flask(__name__)
@@ -97,9 +96,10 @@ def loading_complete(compiled_rules):
     print(compiled_rules)
 
 def load_yara_rules_in_thread():
-    global compiled_rules
-    compiled_rules = load_yara_rules(yara_folder_path)
-    loading_complete(compiled_rules)
+    with app.app_context():
+        global compiled_rules
+        compiled_rules = load_yara_rules(yara_folder_path)
+        loading_complete(compiled_rules)
 
 # Call load_yara_rules_in_thread to initiate the loading process in a separate thread
 load_yara_rules_in_thread()
@@ -107,27 +107,30 @@ with app.app_context():
     yara_rules = compiled_rules
 # Create the Scanner instance with Yara rules
 XylentScanner = Scanner(sha256_signatures=sha256_signatures_data, md5_signatures=md5_signatures_data, tlsh_signatures=tlsh_signatures_data, yara_rules=yara_rules, rootPath=app.root_path)
-def startSystemWatcher(thread_resume):
-    thread_resume.set()
-    systemWatcher(XylentScanner,SYSTEM_DRIVE,thread_resume)
+def startSystemWatcher():
+    with app.app_context():
+        g.thread_resume.set()
+        systemWatcher(XylentScanner, SYSTEM_DRIVE, g.thread_resume)
 
 thread_resume = threading.Event()
 realTime_thread = threading.Thread(
     target=startSystemWatcher,args=(thread_resume,))
 realTime_thread.start()
 
-@app.route("/setUserSetting",methods=['POST'])
+@app.route("/setUserSetting", methods=['POST'])
 def setUserSetting():
     data = request.json
     SETTING = data['setting']
     VALUE = data['value']
     print(VALUE)
-    if SETTING=="Real Time Protection":
-        if VALUE==True:
+    if SETTING == "Real Time Protection":
+        if VALUE == True:
             # Start (Real time protection)[RTP] thread to restore file
-            thread_resume.set()
+            with app.app_context():
+                g.thread_resume.set()
         else:
-            thread_resume.clear()
+            with app.app_context():
+                g.thread_resume.clear()
             print("RTP Set!")
     return "Config Applied!"
 
@@ -359,4 +362,9 @@ def launchProgram():
         return "Cannot open: " + PROGRAM_PATH
     
 if __name__ == '__main__':
-   app.run(debug=False)
+    with app.app_context():
+        g.thread_resume = threading.Event()
+        g.realTime_thread = threading.Thread(target=startSystemWatcher)
+        g.realTime_thread.start()
+
+    app.run(debug=False)
