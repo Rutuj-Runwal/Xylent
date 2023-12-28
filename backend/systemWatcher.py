@@ -282,7 +282,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Create a ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:
     # Submit tasks to the ThreadPoolExecutor
-     mouse_listener_future = executor.submit(pynput.mouse.Listener, on_click=on_mouse_click)
+     mouse_listener_future = executor.submit(on_mouse_click)
      monitor_thread_future = executor.submit(file_monitor)
      watch_processes_thread_future = executor.submit(watch_processes)
      mouse_queue_thread_future = executor.submit(process_mouse_queue)
