@@ -34,8 +34,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
     
         if path_to_scan is not None:
-            result = XylentScanner.scanFile(path_to_scan)
-            file_queue.put(result)  # Put the result in the queue
+            file_queue.put(path_to_scan)  # Put the result in the queue
 
     def get_file_path_from_click(x, y):
         hwnd = win32gui.WindowFromPoint((x, y))
@@ -98,9 +97,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
             for action, file in results:
                 path_to_scan = os.path.join(path_to_watch, file)
-                print(path_to_scan)  # Print the path for debugging purposes
-                result = XylentScanner.scanFile(path_to_scan)
-                file_queue.put(result)  # Put the result in the queue
+                file_queue.put(path_to_scan)  # Put the result in the queue
 
     def watch_processes():
         global printed_processes
@@ -119,7 +116,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         # Initialize previous_list
         previous_list = initial_processes
 
-        while thread_resume.wait():
+        while thread_resume.is_set():
             try:
                 # Get current running processes
                 current_list = get_running_processes()
@@ -210,12 +207,10 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
                     # Assuming you have a method named 'scanFile' in your Scanner class
                     for path in paths:
-                        result = XylentScanner.scanFile(path)
-                        file_queue.put(result)  # Put the result in the queue
+                        file_queue.put(path)  # Put the result in the queue
         # Include the running file itself in the path_to_scan
         path_to_scan = exe
-        result = XylentScanner.scanFile(path_to_scan)
-        file_queue.put(result)  # Put the result in the queue
+        file_queue.put(path_to_scan)  # Put the result in the queue
 
     def get_parent_process_info(file_path):
         try:
