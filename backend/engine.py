@@ -131,8 +131,6 @@ def setUserSetting():
             print("RTP Set!")
     return "Config Applied!"
 
-
-
 @app.route("/getActiveProcesses",methods=['GET'])
 def activeProcess():
     import subprocess
