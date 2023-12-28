@@ -291,7 +291,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Wait for all tasks to complete
     concurrent.futures.wait(
          [mouse_listener_future, monitor_thread_future, process_queue_thread_future, watch_processes_thread_future,mouse_queue_thread_future,watch_queue_thread_future],
-         return_when=concurrent.futures.ALL_COMPLETED
      )
  
     mouse_listener_future.result()  # Wait for the mouse listener to finish
