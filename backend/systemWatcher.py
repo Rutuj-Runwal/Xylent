@@ -25,8 +25,7 @@ previous_list = set()
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
     XYLENT_CACHE_MAXSIZE = 500000  # 500KB
-    while thread_resume.wait():
-     file_queue = Queue()
+    file_queue = Queue()
 
     def on_mouse_click(x, y, button, pressed):
         path_to_scan = get_file_path_from_click(x, y)
