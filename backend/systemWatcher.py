@@ -218,7 +218,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
             # Set verdict for the parent_path
             new_event_queue.put(parent_path)
-        def process_new_process_events():
+    def process_new_process_events():
          while thread_resume.is_set():
             try:
                 # Retrieve mouse events from the queue
@@ -259,7 +259,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         process_mouse_events_future = executor.submit(process_file_monitor_events)
     # Start the watch processes thread concurrently
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        new_process_future = executor.submit(new_process_checker)
+        new_process_future = executor.submit( process_new_process_events)()
         watch_processes_future = executor.submit(watch_processes)
 
     # Wait for all threads to finish
