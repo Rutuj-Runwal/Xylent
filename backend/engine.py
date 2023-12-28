@@ -107,38 +107,37 @@ with app.app_context():
     yara_rules = compiled_rules
 # Create the Scanner instance with Yara rules
 XylentScanner = Scanner(sha256_signatures=sha256_signatures_data, md5_signatures=md5_signatures_data, tlsh_signatures=tlsh_signatures_data, yara_rules=yara_rules, rootPath=app.root_path)
-def startSystemWatcher():
-    global thread_resume
-    with app.app_context():
-        thread_resume.set()
-        systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume)
+
+def startSystemWatcher(thread_resume):
+    thread_resume.set()
+    systemWatcher(XylentScanner,SYSTEM_DRIVE,thread_resume)
 
 thread_resume = threading.Event()
 realTime_thread = threading.Thread(
     target=startSystemWatcher,args=(thread_resume,))
 realTime_thread.start()
 
-@app.route("/setUserSetting", methods=['POST'])
+@app.route("/setUserSetting",methods=['POST'])
 def setUserSetting():
     data = request.json
     SETTING = data['setting']
     VALUE = data['value']
     print(VALUE)
-    if SETTING == "Real Time Protection":
-        if VALUE:
+    if SETTING=="Real Time Protection":
+        if VALUE==True:
             # Start (Real time protection)[RTP] thread to restore file
-            with app.app_context():
-                thread_resume.set()
+            thread_resume.set()
         else:
-            with app.app_context():
-                thread_resume.clear()
-            print("RTP Cleared!") # Update the message for clarity
+            thread_resume.clear()
+            print("RTP Set!")
     return "Config Applied!"
+
+
 
 @app.route("/getActiveProcesses",methods=['GET'])
 def activeProcess():
     import subprocess
-    cmd = r'powershell "gps | where {$_.MainWindowTitle } | select ProcessName,Description,Id,Path'
+    cmd = 'powershell "gps | where {$_.MainWindowTitle } | select ProcessName,Description,Id,Path'
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     ans = []
     for line in proc.stdout:
@@ -152,7 +151,7 @@ def startupItems():
     import subprocess
     # cmd = 'wmic startup list brief'
     # cmd = "reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Run"
-    cmd = r"reg query HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
+    cmd = "reg query HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     data = []
     for line in proc.stdout:
@@ -281,7 +280,7 @@ def addFirewallRules(url):
                     rule = "netsh advfirewall firewall add rule name='XYLENT_AV_IP_RULE' Dir=Out Action=Block RemoteIP="+ip.rstrip()
                     # print(rule)
                     process = subprocess.run(
-                        ['Powershell', '-Command', rule], stdout=subprocess.PIPE, encoding='latin-1')
+                        ['Powershell', '-Command', rule], stdout=subprocess.PIPE, encoding='utf-8')
                     realtime_output = process.stdout
                     if realtime_output == '' and process.poll() is not None:
                         break
@@ -303,8 +302,8 @@ def cleanJunk():
     import time
     import shutil
     localTempPath = R"${TEMP}"
-    windowsTempPath = SYSTEM_DRIVE + r"\Windows\Temp"
-    prefetchPath = SYSTEM_DRIVE + r"\Windows\Prefetch"
+    windowsTempPath = SYSTEM_DRIVE+"\Windows\Temp"
+    prefetchPath = SYSTEM_DRIVE+"\Windows\Prefetch"
     now = time.time()
     size = 0
     root = [prefetchPath, os.path.expandvars(localTempPath), windowsTempPath]
@@ -363,9 +362,4 @@ def launchProgram():
         return "Cannot open: " + PROGRAM_PATH
     
 if __name__ == '__main__':
-    thread_resume = threading.Event()
-    with app.app_context():
-        g.realTime_thread = threading.Thread(target=startSystemWatcher)
-        g.realTime_thread.start()
-
-    app.run(debug=False)
+   app.run(debug=False)
