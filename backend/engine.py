@@ -125,14 +125,14 @@ def setUserSetting():
     VALUE = data['value']
     print(VALUE)
     if SETTING == "Real Time Protection":
-        if VALUE == True:
+        if VALUE:
             # Start (Real time protection)[RTP] thread to restore file
             with app.app_context():
                 thread_resume.set()
         else:
             with app.app_context():
                 thread_resume.clear()
-            print("RTP Set!")
+            print("RTP Cleared!") # Update the message for clarity
     return "Config Applied!"
 
 @app.route("/getActiveProcesses",methods=['GET'])
