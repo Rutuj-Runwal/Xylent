@@ -9,6 +9,7 @@ from queue import Queue
 import psutil
 import concurrent.futures
 from parseJson import ParseJson
+import threading 
 
 FILE_ACTION_ADDED = 0x00000001
 FILE_ACTION_REMOVED = 0x00000002
@@ -30,9 +31,13 @@ mouse_click_queue = Queue()
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
+    def start_mouse_listener():
+     with pynput.mouse.Listener(on_click=on_mouse_click) as listener:
+         listener.join()
+
     def on_mouse_click(x, y, button, pressed):
         try:
-            if thread_resume.is_set():
+            if thread_resume.wait():
                 path_to_scan = get_file_path_from_click(x, y)
                 print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
                 verdict = XylentScanner.scanFile(path_to_scan)
@@ -236,13 +241,13 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Create a ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:
      # Submit tasks to the executor
-     mouse_listener_future = executor.submit(lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
+     mouse_listener_thread_future = threading.Thread(target=start_mouse_listener)
      monitor_thread_future = executor.submit(file_monitor)
      watch_processes_thread_future = executor.submit(watch_processes)
 
     # Wait for all tasks to complete
-    concurrent.futures.wait([mouse_listener_future, monitor_thread_future, watch_processes_thread_future])
-    mouse_listener_future.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
+    concurrent.futures.wait([mouse_listener_thread_future, monitor_thread_future, watch_processes_thread_future])
+    mouse_listener_thread_future.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
     monitor_thread_future.join()  # Wait for the file monitor to finish
     watch_processes_thread_future.join()  # Wait for the process monitoring thread to finish
 
