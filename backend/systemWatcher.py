@@ -49,7 +49,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     def process_file_queue():
         while thread_resume.is_set():
             try:
-                path_to_scan = file_queue.get(timeout=1)  # Timeout to avoid blocking indefinitely
+                path_to_scan = file_queue.get(timeout=0.01)  # Timeout to avoid blocking indefinitely
                 print(f"Processing file: {path_to_scan}")
 
                 try:
