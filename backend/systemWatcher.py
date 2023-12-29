@@ -21,7 +21,10 @@ XYLENT_NEW_PROCESS_INFO = ParseJson('./config', 'new_processes.json', {})
 printed_processes = set()
 previous_list = set()
 results_queue = Queue()  # Define results_queue as a global variable
-
+# Add a queue for mouse clicks
+mouse_click_queue = Queue()
+# Add a queue for watch processes
+watch_queue = Queue()
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
@@ -30,7 +33,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         path_to_scan = get_file_path_from_click(x, y)
         print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
         verdict = XylentScanner.scanFile(path_to_scan)
-        results_queue.put(verdict)  # Put the result in the queue
+        mouse_click_queue.put(verdict)  # Put the result in the queue
         XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
 
     def get_file_path_from_click(x, y):
@@ -159,7 +162,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"Running File: {exe}")
             printed_processes.add(exe)
             result0 = XylentScanner.scanFile(exe)
-            results_queue.put(result0)  # Put the result in the queue
+            watch_queue.put(result0)  # Put the result in the queue
             XYLENT_SCAN_CACHE.setVal(exe,result0)
             parent_process_info = get_parent_process_info(pid)
             if parent_process_info is None or parent_process_info.get('exe') is None:
@@ -177,7 +180,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
             message = f"Path: {exe}, Parent Process Path: {parent_path}, Command Line: {cmdline}"
             result = XylentScanner.scanFile(parent_path)
-            results_queue.put(result)  # Put the result in the queue
+            watch_queue.put(result)  # Put the result in the queue
             XYLENT_SCAN_CACHE.setVal(parent_path,result)
             # Print to the console
             print("New Process Detected:", message)
@@ -190,7 +193,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     # Assuming you have a method named 'scanFile' in your Scanner class
                     for path in paths:
                         result1 = XylentScanner.scanFile(path)
-                        results_queue.put(result1)  # Put the result in the queue
+                        watch_queue.put(result1)  # Put the result in the queue
                         XYLENT_SCAN_CACHE.setVal(path,result1)
 
     def get_parent_process_info(file_path):
