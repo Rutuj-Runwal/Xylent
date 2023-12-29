@@ -26,18 +26,17 @@ mouse_click_queue = Queue()
 # Add a queue for watch processes
 watch_queue = Queue()
 # Add a queue for buffered mouse clicks
-buffered_mouse_click_queue = Queue()
-BUFFER_SIZE = 4096  # Adjust the buffer size based on your needs
+mouse_click_queue = Queue()
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
     def on_mouse_click(x, y, button, pressed):
         try:
-            if thread_resume.wait():
+            if thread_resume.is_set():
                 path_to_scan = get_file_path_from_click(x, y)
                 print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
                 verdict = XylentScanner.scanFile(path_to_scan)
-                buffered_mouse_click_queue.put(verdict)  # Put the result in the buffered queue
+                mouse_click_queue.put(verdict)  # Put the result in the buffered queue
                 XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
 
         except Exception as e:
