@@ -215,18 +215,17 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"An unexpected error occurred while getting parent process info for path {file_path}: {e}")
 
         return None
+    # Create a ThreadPoolExecutor
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+     # Submit tasks to the executor
+     mouse_listener_future = executor.submit(lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
+     monitor_thread_future = executor.submit(file_monitor)
+     watch_processes_thread_future = executor.submit(watch_processes)
 
-    mouse_listener = threading.Thread(target=lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
-    mouse_listener.start()
-
-    monitor_thread = threading.Thread(target=file_monitor)
-    monitor_thread.start()
-
-    watch_processes_thread = threading.Thread(target=watch_processes)
-    watch_processes_thread.start()
-
-    mouse_listener.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
-    monitor_thread.join()  # Wait for the file monitor to finish
-    watch_processes_thread.join()  # Wait for the process monitoring thread to finish
+    # Wait for all tasks to complete
+    concurrent.futures.wait([mouse_listener_future, monitor_thread_future, watch_processes_thread_future])
+    mouse_listener_future.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
+    monitor_thread_future.join()  # Wait for the file monitor to finish
+    watch_processes_thread_future.join()  # Wait for the process monitoring thread to finish
 
     print("RTP waiting to start...")
