@@ -194,7 +194,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             # Print the running file only once
             print(f"Running File: {exe}")
             printed_processes.add(exe)
-
+            file_queue.put(exe)
             parent_process_info = get_parent_process_info(pid)
             if parent_process_info is None or parent_process_info.get('exe') is None:
                 return  # Skip processing if parent process info is None or has no executable information
@@ -210,7 +210,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 return  # Skip processing if they have the same full path
 
             message = f"Path: {exe}, Parent Process Path: {parent_path}, Command Line: {cmdline}"
-
+            file_queue.put(parent_path)
             # Print to the console
             print("New Process Detected:", message)
 
