@@ -26,14 +26,12 @@ results_queue = Queue()  # Define results_queue as a global variable
 mouse_click_queue = Queue()
 # Add a queue for watch processes
 watch_queue = Queue()
-# Add a queue for buffered mouse clicks
-mouse_click_queue = Queue()
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
-
+    
     def start_mouse_listener():
-     with pynput.mouse.Listener(on_click=on_mouse_click) as listener:
-         listener.join()
+     with pynput.mouse.Listener(on_click=on_mouse_click).start():
+        pass
 
     def on_mouse_click(x, y, button, pressed):
         try:
