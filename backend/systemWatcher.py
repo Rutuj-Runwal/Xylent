@@ -229,21 +229,16 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
         return None
 
-    mouse_listener = threading.Thread(target=lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
-    mouse_listener.start()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit each task individually and pass the required arguments
+        futures = [
+            executor.submit(lambda: pynput.mouse.Listener(on_click=on_mouse_click).start()),
+            executor.submit(file_monitor),
+            executor.submit(process_file_queue),
+            executor.submit(watch_processes)
+        ]
 
-    monitor_thread = threading.Thread(target=file_monitor)
-    monitor_thread.start()
-
-    process_queue_thread = threading.Thread(target=process_file_queue)
-    process_queue_thread.start()
-
-    watch_processes_thread = threading.Thread(target=watch_processes)
-    watch_processes_thread.start()
-
-    mouse_listener.join()  # Wait for the mouse listener to finish (shouldn't happen in this case)
-    monitor_thread.join()  # Wait for the file monitor to finish
-    process_queue_thread.join()  # Wait for the file processing thread to finish
-    watch_processes_thread.join()  # Wait for the process monitoring thread to finish
+        # Wait for all threads to finish
+        concurrent.futures.wait(futures)
 
     print("RTP waiting to start...")
