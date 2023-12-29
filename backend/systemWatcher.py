@@ -29,19 +29,28 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
     def on_mouse_click(x, y, button, pressed):
-     if thread_resume.wait():
-        path_to_scan = get_file_path_from_click(x, y)
-        print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
-        verdict = XylentScanner.scanFile(path_to_scan)
-        mouse_click_queue.put(verdict)  # Put the result in the queue
-        XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+        try:
+            if thread_resume.wait():
+                path_to_scan = get_file_path_from_click(x, y)
+                print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
+                verdict = XylentScanner.scanFile(path_to_scan)
+                mouse_click_queue.put(verdict)  # Put the result in the queue
+                XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
+
+        except Exception as e:
+            print(f"Error in on_mouse_click: {e}")
 
     def get_file_path_from_click(x, y):
-        hwnd = win32gui.WindowFromPoint((x, y))
-        pid = win32process.GetWindowThreadProcessId(hwnd)[1]
-        handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
-        return win32process.GetModuleFileNameEx(handle, 0)
+        try:
+            hwnd = win32gui.WindowFromPoint((x, y))
+            pid = win32process.GetWindowThreadProcessId(hwnd)[1]
+            handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
+            return win32process.GetModuleFileNameEx(handle, 0)
 
+        except Exception as e:
+            print(f"Error in get_file_path_from_click: {e}")
+            return None
+        
     def file_monitor():
         while thread_resume.wait():
             # File monitoring
