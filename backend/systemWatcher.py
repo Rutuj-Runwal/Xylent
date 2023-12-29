@@ -27,7 +27,7 @@ mouse_click_queue = Queue()
 watch_queue = Queue()
 # Add a queue for buffered mouse clicks
 buffered_mouse_click_queue = Queue()
-BUFFER_SIZE = 10  # Adjust the buffer size based on your needs
+BUFFER_SIZE = 4096  # Adjust the buffer size based on your needs
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
