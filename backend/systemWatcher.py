@@ -29,7 +29,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_CACHE_MAXSIZE = 500000  # 500KB
 
     def on_mouse_click(x, y, button, pressed):
-     while thread_resume.is_set():
+     if thread_resume.is_set():
         path_to_scan = get_file_path_from_click(x, y)
         print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
     
