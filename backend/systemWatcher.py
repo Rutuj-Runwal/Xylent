@@ -5,8 +5,6 @@ import win32gui
 import win32api
 import win32process
 import pynput.mouse
-import threading
-import queue
 from queue import Queue
 import psutil
 import concurrent.futures
