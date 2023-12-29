@@ -28,10 +28,6 @@ mouse_click_queue = Queue()
 watch_queue = Queue()
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
-    
-    def start_mouse_listener():
-     with pynput.mouse.Listener(on_click=on_mouse_click).start():
-        pass
 
     def on_mouse_click(x, y, button, pressed):
         try:
@@ -239,7 +235,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Create a ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:
      # Submit tasks to the executor
-     mouse_listener_thread_future = threading.Thread(target=start_mouse_listener)
+     mouse_listener_thread_future = threading.Thread(lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
      monitor_thread_future = executor.submit(file_monitor)
      watch_processes_thread_future = executor.submit(watch_processes)
 
