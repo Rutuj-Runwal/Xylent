@@ -25,6 +25,9 @@ results_queue = Queue()  # Define results_queue as a global variable
 mouse_click_queue = Queue()
 # Add a queue for watch processes
 watch_queue = Queue()
+# Add a queue for buffered mouse clicks
+buffered_mouse_click_queue = Queue()
+BUFFER_SIZE = 10  # Adjust the buffer size based on your needs
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
@@ -34,23 +37,29 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 path_to_scan = get_file_path_from_click(x, y)
                 print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
                 verdict = XylentScanner.scanFile(path_to_scan)
-                mouse_click_queue.put(verdict)  # Put the result in the queue
+                buffered_mouse_click_queue.put(verdict)  # Put the result in the buffered queue
                 XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
 
         except Exception as e:
             print(f"Error in on_mouse_click: {e}")
 
     def get_file_path_from_click(x, y):
-        try:
-            hwnd = win32gui.WindowFromPoint((x, y))
-            pid = win32process.GetWindowThreadProcessId(hwnd)[1]
-            handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
-            return win32process.GetModuleFileNameEx(handle, 0)
+      try:
+        # Get the window handle under the mouse click
+        hwnd = win32gui.WindowFromPoint((x, y))
 
-        except Exception as e:
-            print(f"Error in get_file_path_from_click: {e}")
-            return None
-        
+        # Get the process ID of the window
+        pid = win32process.GetWindowThreadProcessId(hwnd)[1]
+
+        # Open the process to obtain a handle
+        handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
+
+        # Get the full path to the executable of the process
+        return win32process.GetModuleFileNameEx(handle, 0)
+
+      except Exception as e:
+        print(f"Error in get_file_path_from_click: {e}")
+        return None  
     def file_monitor():
         while thread_resume.wait():
             # File monitoring
