@@ -30,7 +30,7 @@ A powerful antivirus built using Electron framework and python
 - Detects newly opened files and mouse clicks on file.
 
 https://github.com/Rutuj-Runwal/Xylent/assets/59436520/38a76c6f-3bbe-49d7-baa0-c386d96e6492
-![2023-12-29-15-09-35](https://github.com/HydraDragonAntivirus/Xylent/assets/142328963/6bf183df-0c38-4ab8-93b1-731f85a8ca49)
+
 
 
 ### Quarantine Management Demo:
