@@ -234,12 +234,14 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         return None
     # Create a ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:
-     # Submit tasks to the executor
-     mouse_listener_thread_future = threading.Thread(target=lambda: pynput.mouse.Listener(on_click=on_mouse_click).start(), group=None)
+    # Submit tasks to the executor
+     mouse_listener_thread = threading.Thread(target=lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
+     mouse_listener_thread.start()
+
      monitor_thread_future = executor.submit(file_monitor)
      watch_processes_thread_future = executor.submit(watch_processes)
 
     # Wait for all tasks to complete
-    concurrent.futures.wait([mouse_listener_thread_future, monitor_thread_future, watch_processes_thread_future])
-    
+    concurrent.futures.wait([monitor_thread_future, watch_processes_thread_future])
+
     print("RTP waiting to start...")
