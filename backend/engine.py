@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # Global Variables
 SYSTEM_DRIVE  =  os.path.expandvars("%systemdrive%")
-# Load in SHA256 signatures
+VIRUSSHARE_PATH = "./rules/virusshare.txt"
 SHA256_PATH = "./rules/sha256_db.txt"
 MD5_PATH = "./rules/md5_db.txt"
 SHA1_PATH = "./rules/sha1_db.txt"
@@ -19,8 +19,16 @@ sha256_signatures_data = {}
 md5_signatures_data = {}
 sha1_signatures_data = {}
 tlsh_signatures_data = {}
+virusshare_md5_signatures_data = {}
 # Global variable to store compiled YARA rules
 compiled_rules = {}
+# Load virusshare.txt MD5 signatures
+with open(VIRUSSHARE_PATH, 'r') as f:
+    temp = f.read().split("\n")
+    f.close()
+
+for i in range(len(temp)):
+    virusshare_md5_signatures_data[temp[i]] = ""  # Set the value to an empty string, as there is no additional information
 # Load SHA256 signatures
 with open(SHA256_PATH, 'r') as f:
     temp = f.read().split("\n")
@@ -114,8 +122,7 @@ load_yara_rules_in_thread()
 with app.app_context():
     yara_rules = compiled_rules
 # Create the Scanner instance with Yara rules
-XylentScanner = Scanner(sha256_signatures=sha256_signatures_data, md5_signatures=md5_signatures_data, tlsh_signatures=tlsh_signatures_data,sha1_signatures=sha1_signatures_data, yara_rules=yara_rules, rootPath=app.root_path)
-
+XylentScanner = Scanner(sha256_signatures=sha256_signatures_data, md5_signatures=md5_signatures_data, tlsh_signatures=tlsh_signatures_data, sha1_signatures=sha1_signatures_data, yara_rules=yara_rules, rootPath=app.root_path, virusshare_md5_signatures=virusshare_md5_signatures_data)
 def startSystemWatcher(thread_resume):
     thread_resume = threading.Event()
     thread_resume.set()
