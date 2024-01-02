@@ -1,6 +1,6 @@
 # Xylent
--A powerful antivirus built using Electron framework and python
--Download malware definations here: https://mega.nz/file/WhBRyBxA#vhGayaWmTZNeb57ijiAUuFWlRBFty07FSShrBmxT5-U
+- A powerful antivirus built using Electron framework and python
+- Download malware definations here: https://mega.nz/file/WhBRyBxA#vhGayaWmTZNeb57ijiAUuFWlRBFty07FSShrBmxT5-U
 ### Added Features
 - Real Time System Watch
 - Database based quering(md5, sha1, sha256 and tlsh)
