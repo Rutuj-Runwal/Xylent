@@ -1,17 +1,19 @@
 import hashlib
 import os
 import tlsh
+import ssdeep
 from quarantineThreats import Quarantine
 
 class Scanner:
-    def __init__(self, sha256_signatures, md5_signatures, sha1_signatures, tlsh_signatures, rootPath, yara_rules, virusshare_md5_signatures):
+    def __init__(self, sha256_signatures, md5_signatures, sha1_signatures, tlsh_signatures, rootPath, yara_rules, virusshare_md5_signatures,ssdeep_signatures):
         self.__sha256_signatures = sha256_signatures
         self.__md5_signatures = md5_signatures
         self.__sha1_signatures = sha1_signatures
         self.__tlsh_signatures = tlsh_signatures
-        self.virusshare_md5_signatures_data = virusshare_md5_signatures
+        self.__virusshare_md5_signatures_data = virusshare_md5_signatures
+        self.__ssdeep_signatures_data = ssdeep_signatures
         self.__rootPath = rootPath
-        self.yara_rules = yara_rules
+        self.__yara_rules = yara_rules
         self.quarantineData = {
             'configFileName': 'quar_info',
             'configFilePath': os.path.join(self.__rootPath, 'config'),
@@ -24,7 +26,21 @@ class Scanner:
         excluded_rules_path = os.path.join(self.__rootPath, 'excluded', 'excluded_rules.txt')
         with open(excluded_rules_path, "r") as file:
             self.excluded_rules = file.read()
+    def getSSDEEPhash(self, path):
+        try:
+            with open(path, 'rb') as f:
+                file_content = f.read()
 
+            # Check if the file is empty
+            if not file_content:
+                print("File is empty. Skipping SSDEEP hash calculation.")
+                return None
+
+            ssdeep_hash = ssdeep.hash(file_content)
+            return ssdeep_hash
+        except (PermissionError, OSError):
+            print("Permission Error or OS Error. Skipping SSDEEP hash calculation.")
+            return None
     def getSHA1Hash(self, path):
         try:
             with open(path, 'rb') as f:
@@ -229,12 +245,29 @@ class Scanner:
                         detectionSpace = "[S]" + self.__sha1_signatures[sha1_hash_sig]
                         sha1_match_found = True
             if hashToChk != "" and suspScore < 70:
-                # VIRUSSHARE.TXT BASED DETECTION - MD5
+                # VIRUSSHARE BASED DETECTION - MD5
                 virusshare_match_found = False
                 md5_hash = self.getMD5Hash(path)
-                if md5_hash in self.virusshare_md5_signatures_data:
+                if md5_hash in self.__virusshare_md5_signatures_data:
                     detectionSpace = "[S] + VirusShare"  # You can add more specific information if available
                     virusshare_match_found = True
+            # MALSHARE BASED DETECTION - SSDEEP
+            ssdeep_match_found = False
+            ssdeep_hash = self.getSSDEEPhash(path)
+            if ssdeep_hash is not None:
+                for ssdeep_sig in self.__ssdeep_signatures_data:
+                    similarity = ssdeep.compare(ssdeep_hash, ssdeep_sig)
+                    if similarity >= 0.8:
+                        detectionSpace = "[S] + MalShare (SSDEEP)"
+                        ssdeep_match_found = True
+                        print(f"Malware detected using SSDEEP! Similarity: {similarity}")
+
+            if ssdeep_match_found:
+                suspScore = 100
+                 # Combine hash match checks
+                if ssdeep_match_found:
+                    # Set suspScore to 100 or any other value as needed
+                    suspScore = 100
                 # Combine hash match checks
                 if virusshare_match_found:
                     # Set suspScore to 100 or any other value as needed
@@ -249,7 +282,7 @@ class Scanner:
                         with open(path, 'rb') as f:
                             file_content = f.read()
                         yara_match_found = False
-                        for rule_name, compiled_rule in self.yara_rules.items():
+                        for rule_name, compiled_rule in self.__yara_rules.items():
                             matches = compiled_rule.match(data=file_content)
                             for match in matches:
                                 if match.rule not in self.excluded_rules:
