@@ -262,18 +262,12 @@ class Scanner:
                          detectionSpace = "[S] + MalShare (SSDEEP)"
                          ssdeep_match_found = True
                          print(f"Malware detected using SSDEEP! Similarity: {similarity}")
-
-            if ssdeep_match_found:
-                suspScore = 100
-                 # Combine hash match checks
                 if ssdeep_match_found:
                     # Set suspScore to 100 or any other value as needed
                     suspScore = 100
-                # Combine hash match checks
                 if virusshare_match_found:
                     # Set suspScore to 100 or any other value as needed
                     suspScore = 100
-                # Combine hash match checks
                 if sha1_match_found:
                     # Set suspScore to 100 or any other value as needed
                     suspScore = 100
