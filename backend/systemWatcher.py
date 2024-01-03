@@ -111,8 +111,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             )
 
             for action, file in results:
-                cleaned_file = file.replace("-1", "")
-                path_to_scan = os.path.join(path_to_watch, cleaned_file)
+                path_to_scan = os.path.join(path_to_watch, file)
                 print(path_to_scan)  # Print the path for debugging purposes
                 result3 = XylentScanner.scanFile(path_to_scan)
                 results_queue.put(result3)  # Put the result in the queue
