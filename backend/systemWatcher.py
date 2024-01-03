@@ -64,21 +64,25 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         except Exception as e:
             print(f"Error in get_file_path_and_cmdline_from_click: {e}")
             return None, None
-
     def get_cmdline_for_pid(pid):
-        try:
-            process = psutil.Process(pid)
-            cmdline = process.cmdline()
-            return cmdline
-        except psutil.NoSuchProcess:
-            print(f"Error: No such process with PID {pid}")
-        except psutil.AccessDenied:
-            print(f"Error: Access denied while retrieving command line for PID {pid}")
-        except Exception as e:
-            print(f"An unexpected error occurred while getting command line for PID {pid}: {e}")
-        
-        return None
+     try:
+        # Check if the process with the given PID exists
+        if not psutil.pid_exists(pid):
+            print(f"Error: Process with PID {pid} does not exist.")
+            return []
 
+        process = psutil.Process(pid)
+        cmdline = process.cmdline()
+        return cmdline
+     except psutil.NoSuchProcess:
+        print(f"Error: No such process with PID {pid}")
+     except psutil.AccessDenied:
+        print(f"Error: Access denied while retrieving command line for PID {pid}")
+     except Exception as e:
+        print(f"An unexpected error occurred while getting command line for PID {pid}: {e}")
+
+     # Return an empty list in case of an exception
+     return []
     def file_monitor():
         while thread_resume.wait():
             # File monitoring
