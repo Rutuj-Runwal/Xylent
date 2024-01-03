@@ -251,16 +251,17 @@ class Scanner:
                 if md5_hash in self.__virusshare_md5_signatures_data:
                     detectionSpace = "[S] + VirusShare"  # You can add more specific information if available
                     virusshare_match_found = True
-            # MALSHARE BASED DETECTION - SSDEEP
-            ssdeep_match_found = False
-            ssdeep_hash = self.getSSDEEPhash(path)
-            if ssdeep_hash is not None:
-                for ssdeep_sig in self.__ssdeep_signatures_data:
+            if hashToChk != "" and suspScore < 70:
+                # MALSHARE BASED DETECTION - SSDEEP
+                ssdeep_match_found = False
+                ssdeep_hash = self.getSSDEEPhash(path)
+                if ssdeep_hash is not None:
+                 for ssdeep_sig in self.__ssdeep_signatures_data:
                     similarity = ssdeep.compare(ssdeep_hash, ssdeep_sig)
                     if similarity >= 0.8:
-                        detectionSpace = "[S] + MalShare (SSDEEP)"
-                        ssdeep_match_found = True
-                        print(f"Malware detected using SSDEEP! Similarity: {similarity}")
+                         detectionSpace = "[S] + MalShare (SSDEEP)"
+                         ssdeep_match_found = True
+                         print(f"Malware detected using SSDEEP! Similarity: {similarity}")
 
             if ssdeep_match_found:
                 suspScore = 100
