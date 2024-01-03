@@ -32,8 +32,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     def on_mouse_click(x, y, button, pressed):
         try:
             if thread_resume.wait():
-                path_to_scan = get_file_path_from_click(x, y)
+                path_to_scan, cmdline = get_file_path_and_cmdline_from_click(x, y)
                 print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
+                print(f"Command line arguments: {cmdline}")
                 verdict = XylentScanner.scanFile(path_to_scan)
                 mouse_click_queue.put(verdict)  # Put the result in the buffered queue
                 XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
@@ -41,23 +42,43 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         except Exception as e:
             print(f"Error in on_mouse_click: {e}")
 
-    def get_file_path_from_click(x, y):
-      try:
-        # Get the window handle under the mouse click
-        hwnd = win32gui.WindowFromPoint((x, y))
+    def get_file_path_and_cmdline_from_click(x, y):
+        try:
+            # Get the window handle under the mouse click
+            hwnd = win32gui.WindowFromPoint((x, y))
 
-        # Get the process ID of the window
-        pid = win32process.GetWindowThreadProcessId(hwnd)[1]
+            # Get the process ID of the window
+            pid = win32process.GetWindowThreadProcessId(hwnd)[1]
 
-        # Open the process to obtain a handle
-        handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
+            # Open the process to obtain a handle
+            handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
 
-        # Get the full path to the executable of the process
-        return win32process.GetModuleFileNameEx(handle, 0)
+            # Get the full path to the executable of the process
+            exe_path = win32process.GetModuleFileNameEx(handle, 0)
 
-      except Exception as e:
-        print(f"Error in get_file_path_from_click: {e}")
-        return None  
+            # Get the command line arguments
+            cmdline = get_cmdline_for_pid(pid)
+
+            return exe_path, cmdline
+
+        except Exception as e:
+            print(f"Error in get_file_path_and_cmdline_from_click: {e}")
+            return None, None
+
+    def get_cmdline_for_pid(pid):
+        try:
+            process = psutil.Process(pid)
+            cmdline = process.cmdline()
+            return cmdline
+        except psutil.NoSuchProcess:
+            print(f"Error: No such process with PID {pid}")
+        except psutil.AccessDenied:
+            print(f"Error: Access denied while retrieving command line for PID {pid}")
+        except Exception as e:
+            print(f"An unexpected error occurred while getting command line for PID {pid}: {e}")
+        
+        return None
+
     def file_monitor():
         while thread_resume.wait():
             # File monitoring
@@ -90,7 +111,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             )
 
             for action, file in results:
-                path_to_scan = os.path.join(path_to_watch, file)
+                path_to_scan = os.path.normpath(os.path.join(path_to_watch, file))
                 print(path_to_scan)  # Print the path for debugging purposes
                 result3 = XylentScanner.scanFile(path_to_scan)
                 results_queue.put(result3)  # Put the result in the queue
