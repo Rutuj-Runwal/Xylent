@@ -3,7 +3,7 @@
 - Download malware definations here: https://mega.nz/file/WhBRyBxA#vhGayaWmTZNeb57ijiAUuFWlRBFty07FSShrBmxT5-U
 ### Added Features
 - Real Time System Watch
-- Database based quering(md5, sha1, sha256 and tlsh)
+- Database based quering(md5, sha1, sha256, ssdeep and tlsh)
 - Yara based pattern matching analysis
 - Executable file signature and integrity analysis
 - Quarantine Handler
