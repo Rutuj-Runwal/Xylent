@@ -3,3 +3,5 @@ requests
 notify-py
 pywin32
 yara-python
+py-tlsh
+ssdeep
