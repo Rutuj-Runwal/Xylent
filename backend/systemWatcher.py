@@ -21,32 +21,6 @@ previous_list = set()
 results_queue = Queue()  # Define results_queue as a global variable
 
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
-    XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
-    XYLENT_CACHE_MAXSIZE = 500000  # 500KB
-    file_queue = Queue()
-
-    def process_file_queue():
-        while thread_resume.is_set():
-            try:
-                path_to_scan = file_queue.get(timeout=0.01)  # Timeout to avoid blocking indefinitely
-                print(f"Processing file: {path_to_scan}")
-
-                try:
-                    if os.path.isfile(path_to_scan):
-                        verdict = XylentScanner.scanFile(path_to_scan)
-                        XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
-                        results_queue.put(verdict)  # Put the result in the queue
-                        print(f"Scanned and cached: {path_to_scan}")
-                except Exception as e:
-                    print(e)
-                    print(f"Error scanning {path_to_scan}")
-
-            except queue.Empty:
-                pass  # Queue is empty, continue checking
-
-            if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
-                XYLENT_SCAN_CACHE.purge()
-                print("Purging")
 
     def file_monitor():
         while thread_resume.is_set():
@@ -226,14 +200,11 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     monitor_thread = threading.Thread(target=file_monitor)
     monitor_thread.start()
 
-    process_queue_thread = threading.Thread(target=process_file_queue)
-    process_queue_thread.start()
 
     watch_processes_thread = threading.Thread(target=watch_processes)
     watch_processes_thread.start()
 
     monitor_thread.join()  # Wait for the file monitor to finish
-    process_queue_thread.join()  # Wait for the file processing thread to finish
     watch_processes_thread.join()  # Wait for the process monitoring thread to finish
 
     print("RTP waiting to start...")
