@@ -1,15 +1,10 @@
 import os
 import win32file
 import win32con
-import win32gui
-import win32api
-import win32process
-import pynput.mouse
 from queue import Queue
 import psutil
 import concurrent.futures
 from parseJson import ParseJson
-import threading
 from multiprocessing import Pool
 
 FILE_ACTION_ADDED = 0x00000001
