@@ -5,7 +5,7 @@ from queue import Queue
 import psutil
 import concurrent.futures
 from parseJson import ParseJson
-from multiprocessing import Pool
+import threading 
 
 FILE_ACTION_ADDED = 0x00000001
 FILE_ACTION_REMOVED = 0x00000002
@@ -22,28 +22,8 @@ results_queue = Queue()  # Define results_queue as a global variable
 mouse_click_queue = Queue()
 # Add a queue for watch processes
 watch_queue = Queue()
-
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
-
-    def get_process_info(pid):
-        try:
-            p = psutil.Process(pid)
-            if p.info is not None and 'exe' in p.info:
-                exe = p.info['exe']
-                cmdline = tuple(p.info.get('cmdline', []))
-                ppid = p.info.get('ppid', None)
-                return (exe, cmdline, ppid)
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, TypeError):
-            pass
-        except Exception as e:
-            print(f"Error getting process info: {e}")
-        return None
-
-    def get_running_processes():
-        with Pool() as pool:
-            processes = set(pool.map(get_process_info, psutil.pids()))
-        return processes
 
     def file_monitor():
         while thread_resume.wait():
@@ -111,12 +91,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
                 if newly_started_processes:
                     with concurrent.futures.ThreadPoolExecutor() as executor:
-                        # Process new processes in batches
-                        batch_size = 5  # Adjust the batch size based on your needs
-                        batches = [newly_started_processes[i:i + batch_size] for i in range(0, len(newly_started_processes), batch_size)]
-                        for batch in batches:
-                            futures = [executor.submit(new_process_checker, info, XylentScanner, results_queue) for info in batch]
-                            concurrent.futures.wait(futures)
+                        # Submit each task individually and pass the required arguments
+                        futures = [executor.submit(new_process_checker, info, XylentScanner, results_queue) for info in newly_started_processes]
+                        concurrent.futures.wait(futures)
 
                     # Print new processes once
                     print("Newly started processes:")
@@ -141,6 +118,21 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
     def save_new_processes(new_processes):
         XYLENT_NEW_PROCESS_INFO.setVal("new_processes", new_processes)
+
+    def get_running_processes():
+        processes = set()
+        for p in psutil.process_iter(['exe', 'cmdline', 'ppid']):
+            try:
+                if p.info is not None and 'exe' in p.info:
+                    exe = p.info['exe']
+                    cmdline = tuple(p.info.get('cmdline', []))
+                    ppid = p.info.get('ppid', None)
+                    processes.add((exe, cmdline, ppid))
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, TypeError):
+                pass  # Skip processes that are inaccessible or no longer exist
+            except Exception as e:
+                print(f"Error getting process info: {e}")
+        return processes
 
     def new_process_checker(process_info, XylentScanner, results_queue):
         global printed_processes
@@ -207,12 +199,11 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"An unexpected error occurred while getting parent process info for path {file_path}: {e}")
 
         return None
-
     # Create a ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit tasks to the executor
-        monitor_thread_future = executor.submit(file_monitor)
-        watch_processes_thread_future = executor.submit(watch_processes)
+    # Submit tasks to the executor
+     monitor_thread_future = executor.submit(file_monitor)
+     watch_processes_thread_future = executor.submit(watch_processes)
 
     # Wait for all tasks to complete
     concurrent.futures.wait([monitor_thread_future, watch_processes_thread_future])
