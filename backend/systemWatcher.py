@@ -2,7 +2,6 @@ import os
 import win32file
 import win32con
 import threading
-import queue
 from queue import Queue
 import psutil
 import concurrent.futures
