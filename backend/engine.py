@@ -24,14 +24,14 @@ ssdeep_signatures_data = {}
 virusshare_md5_signatures_data = {}
 # Global variable to store compiled YARA rules
 compiled_rules = {}
-# Load virusshare.txt MD5 signatures
+# Load Malshare SSDEEP signatures
 with open(SSDEEP_PATH, 'r') as f:
     temp = f.read().split("\n")
     f.close()
 
 for i in range(len(temp)):
     ssdeep_signatures_data[temp[i]] = ""  # Set the value to an empty string, as there is no additional information
-# Load virusshare.txt MD5 signatures
+# Load VirusShare MD5 signatures
 with open(VIRUSSHARE_PATH, 'r') as f:
     temp = f.read().split("\n")
     f.close()
