@@ -29,60 +29,6 @@ watch_queue = Queue()
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
-    def on_mouse_click(x, y, button, pressed):
-        try:
-            if thread_resume.wait():
-                path_to_scan, cmdline = get_file_path_and_cmdline_from_click(x, y)
-                print(f"Mouse clicked at ({x}, {y}) with button {button} on file: {path_to_scan}")
-                print(f"Command line arguments: {cmdline}")
-                verdict = XylentScanner.scanFile(path_to_scan)
-                mouse_click_queue.put(verdict)  # Put the result in the buffered queue
-                XYLENT_SCAN_CACHE.setVal(path_to_scan, verdict)
-
-        except Exception as e:
-            print(f"Error in on_mouse_click: {e}")
-
-    def get_file_path_and_cmdline_from_click(x, y):
-        try:
-            # Get the window handle under the mouse click
-            hwnd = win32gui.WindowFromPoint((x, y))
-
-            # Get the process ID of the window
-            pid = win32process.GetWindowThreadProcessId(hwnd)[1]
-
-            # Open the process to obtain a handle
-            handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, False, pid)
-
-            # Get the full path to the executable of the process
-            exe_path = win32process.GetModuleFileNameEx(handle, 0)
-
-            # Get the command line arguments
-            cmdline = get_cmdline_for_pid(pid)
-
-            return exe_path, cmdline
-
-        except Exception as e:
-            print(f"Error in get_file_path_and_cmdline_from_click: {e}")
-            return None, None
-    def get_cmdline_for_pid(pid):
-     try:
-        # Check if the process with the given PID exists
-        if not psutil.pid_exists(pid):
-            print(f"Error: Process with PID {pid} does not exist.")
-            return []
-
-        process = psutil.Process(pid)
-        cmdline = process.cmdline()
-        return cmdline
-     except psutil.NoSuchProcess:
-        print(f"Error: No such process with PID {pid}")
-     except psutil.AccessDenied:
-        print(f"Error: Access denied while retrieving command line for PID {pid}")
-     except Exception as e:
-        print(f"An unexpected error occurred while getting command line for PID {pid}: {e}")
-
-     # Return an empty list in case of an exception
-     return []
     def file_monitor():
         while thread_resume.wait():
             # File monitoring
@@ -260,9 +206,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Create a ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:
     # Submit tasks to the executor
-     mouse_listener_thread = threading.Thread(target=lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
-     mouse_listener_thread.start()
-
      monitor_thread_future = executor.submit(file_monitor)
      watch_processes_thread_future = executor.submit(watch_processes)
 
