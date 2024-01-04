@@ -198,8 +198,10 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"An unexpected error occurred while getting parent process info for path {file_path}: {e}")
 
         return None
-    def handle_process_token():
+    def handle_processes_token():
      try:
+          # Define the range of PIDs to monitor (adjust as needed)
+        pid = range(0, 100000)  # For example, monitor PIDs from 0 to 99999
         import win32api
         import win32security
         # Get a handle to the process
@@ -237,8 +239,8 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Submit tasks to the executor
      monitor_thread_future = executor.submit(file_monitor)
      watch_processes_thread_future = executor.submit(watch_processes)
-
+     handle_processes_token_future = executor.submit(handle_processes_token)
     # Wait for all tasks to complete
-    concurrent.futures.wait([monitor_thread_future, watch_processes_thread_future])
+    concurrent.futures.wait([monitor_thread_future, watch_processes_thread_future,handle_processes_token_future])
 
     print("RTP waiting to start...")
