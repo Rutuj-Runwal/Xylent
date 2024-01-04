@@ -194,12 +194,43 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"An unexpected error occurred while getting parent process info for path {file_path}: {e}")
 
         return None
+    def monitor_recent_folder():
+        recent_folder_path = os.path.join(os.environ['APPDATA'], 'Microsoft', 'Windows', 'Recent')
+
+        while thread_resume.wait():
+            try:
+                # List all files in the Recent folder
+                recent_files = [os.path.join(recent_folder_path, file) for file in os.listdir(recent_folder_path)]
+
+                # Filter out directories
+                recent_files = [file for file in recent_files if os.path.isfile(file)]
+
+                # Compare with the previous list and find new files
+                new_files = set(recent_files) - previous_list
+
+                if new_files:
+                    for path in new_files:
+                        result = XylentScanner.scanFile(path)
+                        results_queue.put(result)  # Put the result in the queue
+                        XYLENT_SCAN_CACHE.setVal(path, result)
+
+                    # Update previous_list to avoid processing the same files again
+                    previous_list.update(new_files)
+
+                    # Print new files once
+                    print("Newly opened files in Recent folder:")
+                    print(new_files)
+
+            except Exception as e:
+                print(f"Error in monitor_recent_folder: {e}")
     # Create a ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:
-    # Submit tasks to the executor
-     monitor_thread_future = executor.submit(file_monitor)
-     watch_processes_thread_future = executor.submit(watch_processes)
+        # Submit tasks to the executor
+        monitor_thread_future = executor.submit(file_monitor)
+        watch_processes_thread_future = executor.submit(watch_processes)
+        recent_files_thread_future = executor.submit(monitor_recent_folder)
+
     # Wait for all tasks to complete
-    concurrent.futures.wait([monitor_thread_future, watch_processes_thread_future])
+    concurrent.futures.wait([monitor_thread_future, watch_processes_thread_future, recent_files_thread_future])
 
     print("RTP waiting to start...")
