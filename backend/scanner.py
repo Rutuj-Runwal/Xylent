@@ -259,15 +259,16 @@ class Scanner:
                     # Set suspScore to 100 or any other value as needed
                     suspScore = 100
                 # MALSHARE BASED DETECTION - SSDEEP
-                ssdeep_match_found = False
-                ssdeep_hash = self.getSSDEEPhash(path)
-                if ssdeep_hash is not None:
-                 for ssdeep_sig in self.ssdeep_signatures_data:
-                    similarity = ssdeep.compare(ssdeep_hash, ssdeep_sig)
-                    if similarity >= 0.8:
-                         detectionSpace = "[S] + MalShare (SSDEEP)"
-                         ssdeep_match_found = True
-                         print(f"Malware detected using SSDEEP! Similarity: {similarity}")
+                if hashToChk != "" and suspScore < 70:
+                 ssdeep_match_found = False
+                 ssdeep_hash = self.getSSDEEPhash(path)
+                 if ssdeep_hash is not None:
+                  for ssdeep_sig in self.ssdeep_signatures_data:
+                     similarity = ssdeep.compare(ssdeep_hash, ssdeep_sig)
+                     if similarity >= 0.8:
+                          detectionSpace = "[S] + MalShare (SSDEEP)"
+                          ssdeep_match_found = True
+                          print(f"Malware detected using SSDEEP! Similarity: {similarity}")
                 if ssdeep_match_found:
                     # Set suspScore to 100 or any other value as needed
                     suspScore = 100
