@@ -198,49 +198,12 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"An unexpected error occurred while getting parent process info for path {file_path}: {e}")
 
         return None
-    def handle_processes_token():
-     try:
-          # Define the range of PIDs to monitor (adjust as needed)
-        pid = range(0, 100000)  # For example, monitor PIDs from 0 to 99999
-        import win32api
-        import win32security
-        # Get a handle to the process
-        process_handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION, False, pid)
-
-        # Define the desired access rights
-        desired_access = win32con.TOKEN_ADJUST_PRIVILEGES | win32con.TOKEN_QUERY
-
-        # Open the process token
-        token_handle = win32security.OpenProcessToken(process_handle, desired_access)
-
-        # Get the parent process info
-        parent_process_info = get_parent_process_info(process_handle)
-        parent_path = parent_process_info['exe'] if parent_process_info else None
-
-        # Get the command line of the parent process
-        cmdline = parent_process_info.get('cmdline', [])
-
-        # Perform some actions based on the process token
-        # For example, you might want to scan the file associated with the process
-        result = XylentScanner.scanFile(parent_path)
-        results_queue.put(result)  # Put the result in the queue
-
-        print(f"Process Info: exe={parent_path}, cmdline={cmdline}, parent_path={parent_path}")
-
-     except Exception as e:
-        print(f"An unexpected error occurred in handle_process_token: {e}")
-
-     finally:
-        # Don't forget to close the handles when you're done
-        win32api.CloseHandle(token_handle)
-        win32api.CloseHandle(process_handle)
     # Create a ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:
     # Submit tasks to the executor
      monitor_thread_future = executor.submit(file_monitor)
      watch_processes_thread_future = executor.submit(watch_processes)
-     handle_processes_token_future = executor.submit(handle_processes_token)
     # Wait for all tasks to complete
-    concurrent.futures.wait([monitor_thread_future, watch_processes_thread_future,handle_processes_token_future])
+    concurrent.futures.wait([monitor_thread_future, watch_processes_thread_future])
 
     print("RTP waiting to start...")
