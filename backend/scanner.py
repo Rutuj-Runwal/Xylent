@@ -271,8 +271,7 @@ class Scanner:
                           ssdeep_match_found = True
                           print(f"Malware detected using SSDEEP! Similarity: {similarity}")
                     except Exception as e:
-                        # Handle the error (e.g., print an error message)
-                        print(f"Error while comparing SSDEEP hashes: {e}")
+                     pass
                 if ssdeep_match_found:
                     # Set suspScore to 100 or any other value as needed
                     suspScore = 100
