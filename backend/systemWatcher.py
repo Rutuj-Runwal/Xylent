@@ -198,6 +198,8 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         # Include the running file itself in the path_to_scan
         path_to_scan = exe
         result = XylentScanner.scanFile(path_to_scan)
+        result2 = XylentScanner.scanFile(parent_path)
+        results_queue.put(result2)
         results_queue.put(result)  # Put the result in the queue
 
     def get_parent_process_info(file_path):
