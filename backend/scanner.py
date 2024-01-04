@@ -265,7 +265,7 @@ class Scanner:
                  if ssdeep_hash is not None:
                   for ssdeep_sig in self.ssdeep_signatures_data:
                      similarity = ssdeep.compare(ssdeep_hash, ssdeep_sig)
-                     if similarity >= 0.8:
+                     if similarity <= 0.8:
                           detectionSpace = "[S] + MalShare (SSDEEP)"
                           ssdeep_match_found = True
                           print(f"Malware detected using SSDEEP! Similarity: {similarity}")
