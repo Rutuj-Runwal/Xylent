@@ -6,7 +6,8 @@ from queue import Queue
 import psutil
 import concurrent.futures
 from parseJson import ParseJson
-
+import win32api
+import win32security
 FILE_ACTION_ADDED = 0x00000001
 FILE_ACTION_REMOVED = 0x00000002
 FILE_ACTION_MODIFIED = 0x00000003
@@ -134,7 +135,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
         # process_info is a tuple (exe, cmdline, pid)
         exe, cmdline, pid = process_info
-
+        
         if exe not in printed_processes:
             # Print the running file only once
             print(f"Running File: {exe}")
@@ -195,15 +196,50 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"An unexpected error occurred while getting parent process info for path {file_path}: {e}")
 
         return None
+    def handle_process_token():
+     try:
+        # Get the process ID of the current process
+        pid = os.getpid()
+
+        # Get a handle to the process
+        process_handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION, False, pid)
+
+        # Define the desired access rights
+        desired_access = win32con.TOKEN_ADJUST_PRIVILEGES | win32con.TOKEN_QUERY
+
+        # Open the process token
+        token_handle = win32security.OpenProcessToken(process_handle, desired_access)
+
+        # Get the parent process info
+        parent_process_info = get_parent_process_info(process_handle)
+        parent_path = parent_process_info['exe'] if parent_process_info else None
+
+        # Get the command line of the parent process
+        cmdline = parent_process_info.get('cmdline', [])
+
+        # Perform some actions based on the process token
+        # For example, you might want to scan the file associated with the process
+        result = XylentScanner.scanFile(parent_path)
+        results_queue.put(result)  # Put the result in the queue
+
+        print(f"Process Info: exe={parent_path}, cmdline={cmdline}, parent_path={parent_path}")
+
+     except Exception as e:
+        print(f"An unexpected error occurred in handle_process_token: {e}")
+
+     finally:
+        # Don't forget to close the handles when you're done
+        win32api.CloseHandle(token_handle)
+        win32api.CloseHandle(process_handle)
 
     monitor_thread = threading.Thread(target=file_monitor)
     monitor_thread.start()
-
-
+    api_thread = threading.Thread(target=handle_process_token)
+    api_thread.start()
     watch_processes_thread = threading.Thread(target=watch_processes)
     watch_processes_thread.start()
 
     monitor_thread.join()  # Wait for the file monitor to finish
     watch_processes_thread.join()  # Wait for the process monitoring thread to finish
-
+    api_thread.join()
     print("RTP waiting to start...")
