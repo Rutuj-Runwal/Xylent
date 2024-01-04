@@ -5,7 +5,6 @@ from queue import Queue
 import psutil
 import concurrent.futures
 from parseJson import ParseJson
-import threading 
 
 FILE_ACTION_ADDED = 0x00000001
 FILE_ACTION_REMOVED = 0x00000002
