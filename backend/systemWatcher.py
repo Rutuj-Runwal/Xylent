@@ -13,7 +13,6 @@ FILE_LIST_DIRECTORY = 0x0001
 FILE_NOTIFY_CHANGE_LAST_ACCESS = 0x00000020
 MAX_PATH = 260
 BUF_LEN = 10 * (ctypes.sizeof(ctypes.c_ulong) + MAX_PATH)
-
 # Initialize ParseJson
 XYLENT_NEW_PROCESS_INFO = ParseJson('./config', 'new_processes.json', {})
 
@@ -42,6 +41,8 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         if hDir == win32file.INVALID_HANDLE_VALUE:
               print(f"Failed to open directory: {path_to_watch}")
               return
+        import pywintypes
+        overlapped = pywintypes.OVERLAPPED()
         results = win32file.ReadDirectoryChangesW(
                 hDir,
                 buffer,
@@ -58,6 +59,8 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 FILE_ACTION_REMOVED |
                 FILE_NOTIFY_CHANGE_LAST_ACCESS,
                 ctypes.byref(bytes_returned),
+                None,
+                overlapped
             )
         if not results:
              print(f"Failed to read directory changes: {path_to_watch}")
