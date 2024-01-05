@@ -25,6 +25,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
     def monitor_directory(SYSTEM_DRIVE):
+     try:
         buffer = ctypes.create_string_buffer(BUF_LEN)
         bytes_returned = ctypes.c_ulong()
         # File monitoring using ctypes
@@ -72,6 +73,8 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 result3 = XylentScanner.scanFile(full_path)
                 results_queue.put(result3)  # Put the result in the queue
                 XYLENT_SCAN_CACHE.setVal(full_path, result3)
+     except Exception as e:
+        print(f"Error in monitor_directory: {e}")
     def file_monitor():
         with concurrent.futures.ThreadPoolExecutor() as executor:
             while thread_resume.wait():
