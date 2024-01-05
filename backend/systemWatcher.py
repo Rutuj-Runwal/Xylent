@@ -23,6 +23,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
     def file_monitor():
+     try:
         while thread_resume.wait():
             # File monitoring
             path_to_watch = SYSTEM_DRIVE + "\\"
@@ -36,7 +37,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 win32con.FILE_FLAG_BACKUP_SEMANTICS,
                 None
             )
-
+            if hDir == win32file.INVALID_HANDLE_VALUE:
+              print(f"Failed to open directory: {path_to_watch}")
+              return
             results = win32file.ReadDirectoryChangesW(
                 hDir,
                 1024,
@@ -54,14 +57,16 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 None,
                 None
             )
-
+            if not results:
+             print(f"Failed to read directory changes: {path_to_watch}")
             for action, file in results:
                 path_to_scan = os.path.join(path_to_watch, file)
                 print(path_to_scan)  # Print the path for debugging purposes
                 result3 = XylentScanner.scanFile(path_to_scan)
                 results_queue.put(result3)  # Put the result in the queue
                 XYLENT_SCAN_CACHE.setVal(path_to_scan, result3)
-
+     except Exception as e:
+        print(f"Error in monitor_directory: {e}")
     def watch_processes():
         global printed_processes
         global previous_list
