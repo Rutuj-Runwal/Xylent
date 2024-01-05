@@ -44,7 +44,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
               return
         results = win32file.ReadDirectoryChangesW(
                 hDir,
-                1024,
                 buffer,
                 BUF_LEN,
                 True,
@@ -59,8 +58,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 FILE_ACTION_REMOVED |
                 FILE_NOTIFY_CHANGE_LAST_ACCESS,
                 ctypes.byref(bytes_returned),
-                None,
-                None
             )
         if not results:
              print(f"Failed to read directory changes: {path_to_watch}")
