@@ -27,7 +27,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     def monitor_directory():
         buffer = ctypes.create_string_buffer(BUF_LEN)
         bytes_returned = ctypes.c_ulong()
-            # File monitoring using ctypes
+        # File monitoring using ctypes
         path_to_watch = SYSTEM_DRIVE + "\\"
         hDir = win32file.CreateFile(
                 path_to_watch,
