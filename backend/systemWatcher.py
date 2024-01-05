@@ -30,7 +30,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             hDir = win32file.CreateFile(
                 path_to_watch,
                 FILE_LIST_DIRECTORY,
-                1,
                 win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,
                 None,
                 win32con.OPEN_EXISTING,
