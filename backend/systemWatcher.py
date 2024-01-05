@@ -5,14 +5,13 @@ from queue import Queue
 import psutil
 import concurrent.futures
 from parseJson import ParseJson
-import ctypes
+
 FILE_ACTION_ADDED = 0x00000001
 FILE_ACTION_REMOVED = 0x00000002
 FILE_ACTION_MODIFIED = 0x00000003
 FILE_LIST_DIRECTORY = 0x0001
 FILE_NOTIFY_CHANGE_LAST_ACCESS = 0x00000020
-MAX_PATH = 260
-BUF_LEN = 10 * (ctypes.sizeof(ctypes.c_ulong) + MAX_PATH)
+
 # Initialize ParseJson
 XYLENT_NEW_PROCESS_INFO = ParseJson('./config', 'new_processes.json', {})
 
@@ -23,29 +22,24 @@ results_queue = Queue()  # Define results_queue as a global variable
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
-    def monitor_directory(SYSTEM_DRIVE):
-     try:
-        buffer = ctypes.create_string_buffer(BUF_LEN)
-        bytes_returned = ctypes.c_ulong()
-        # File monitoring using ctypes
-        path_to_watch = SYSTEM_DRIVE + "\\"
-        hDir = win32file.CreateFile(
+    def file_monitor():
+        while thread_resume.wait():
+            # File monitoring
+            path_to_watch = SYSTEM_DRIVE + "\\"
+            hDir = win32file.CreateFile(
                 path_to_watch,
                 FILE_LIST_DIRECTORY,
+                1,
                 win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,
                 None,
                 win32con.OPEN_EXISTING,
                 win32con.FILE_FLAG_BACKUP_SEMANTICS,
                 None
             )
-        if hDir == win32file.INVALID_HANDLE_VALUE:
-              print(f"Failed to open directory: {path_to_watch}")
-              return
-        import pywintypes
-        overlapped = pywintypes.OVERLAPPED()
-        results = win32file.ReadDirectoryChangesW(
+
+            results = win32file.ReadDirectoryChangesW(
                 hDir,
-                buffer,
+                1024,
                 True,
                 win32con.FILE_NOTIFY_CHANGE_FILE_NAME |
                 win32con.FILE_NOTIFY_CHANGE_DIR_NAME |
@@ -57,31 +51,17 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 FILE_ACTION_MODIFIED |
                 FILE_ACTION_REMOVED |
                 FILE_NOTIFY_CHANGE_LAST_ACCESS,
-                None, #lpBuffer
-                None  #lpOverlapped
+                None,
+                None
             )
-        if not results:
-             print(f"Failed to read directory changes: {path_to_watch}")
-        else:
-             for action, file in results:
-                full_path = os.path.join(path_to_watch, file)
-                print(f"File accessed: {full_path}")
-                result3 = XylentScanner.scanFile(full_path)
-                results_queue.put(result3)  # Put the result in the queue
-                XYLENT_SCAN_CACHE.setVal(full_path, result3)
-     except Exception as e:
-        print(f"Error in monitor_directory: {e}")
-    def file_monitor():
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            while thread_resume.wait():
-                # File monitoring using ctypes
-                executor.submit(monitor_directory, SYSTEM_DRIVE)
 
-                # Scan subfolders
-                for root, dirs, files in os.walk(SYSTEM_DRIVE):
-                    for directory in dirs:
-                        full_dir = os.path.join(root, directory)
-                        executor.submit(monitor_directory, full_dir)
+            for action, file in results:
+                path_to_scan = os.path.join(path_to_watch, file)
+                print(path_to_scan)  # Print the path for debugging purposes
+                result3 = XylentScanner.scanFile(path_to_scan)
+                results_queue.put(result3)  # Put the result in the queue
+                XYLENT_SCAN_CACHE.setVal(path_to_scan, result3)
+
     def watch_processes():
         global printed_processes
         global previous_list
