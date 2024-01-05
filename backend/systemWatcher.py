@@ -46,7 +46,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
         results = win32file.ReadDirectoryChangesW(
                 hDir,
                 buffer,
-                BUF_LEN,
                 True,
                 win32con.FILE_NOTIFY_CHANGE_FILE_NAME |
                 win32con.FILE_NOTIFY_CHANGE_DIR_NAME |
@@ -58,16 +57,14 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 FILE_ACTION_MODIFIED |
                 FILE_ACTION_REMOVED |
                 FILE_NOTIFY_CHANGE_LAST_ACCESS,
-                ctypes.byref(bytes_returned),
-                None,
-                overlapped
+                None, #lpBuffer
+                None  #lpOverlapped
             )
         if not results:
              print(f"Failed to read directory changes: {path_to_watch}")
         else:
              for action, file in results:
-                file_name = buffer[32: 32 + bytes_returned.value].decode('utf-16')
-                full_path = os.path.join(path_to_watch, file_name)
+                full_path = os.path.join(path_to_watch, file)
                 print(f"File accessed: {full_path}")
                 result3 = XylentScanner.scanFile(full_path)
                 results_queue.put(result3)  # Put the result in the queue
