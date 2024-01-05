@@ -24,7 +24,7 @@ results_queue = Queue()  # Define results_queue as a global variable
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
-    def monitor_directory():
+    def monitor_directory(SYSTEM_DRIVE):
         buffer = ctypes.create_string_buffer(BUF_LEN)
         bytes_returned = ctypes.c_ulong()
         # File monitoring using ctypes
