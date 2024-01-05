@@ -73,14 +73,16 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 results_queue.put(result3)  # Put the result in the queue
                 XYLENT_SCAN_CACHE.setVal(full_path, result3)
     def file_monitor():
-     while thread_resume.wait():
-        # File monitoring using ctypes
-        monitor_directory(SYSTEM_DRIVE)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            while thread_resume.wait():
+                # File monitoring using ctypes
+                executor.submit(monitor_directory, SYSTEM_DRIVE)
 
-        # Scan subfolders
-        for root, dirs, files in os.walk(SYSTEM_DRIVE):
-            for directory in dirs:
-                monitor_directory(os.path.join(root, directory))
+                # Scan subfolders
+                for root, dirs, files in os.walk(SYSTEM_DRIVE):
+                    for directory in dirs:
+                        full_dir = os.path.join(root, directory)
+                        executor.submit(monitor_directory, full_dir)
     def watch_processes():
         global printed_processes
         global previous_list
