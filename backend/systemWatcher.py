@@ -1,10 +1,11 @@
 import os
-import ctypes
+import win32file
 import win32con
 from queue import Queue
-from parseJson import ParseJson
 import psutil
 import concurrent.futures
+from parseJson import ParseJson
+
 FILE_ACTION_ADDED = 0x00000001
 FILE_ACTION_REMOVED = 0x00000002
 FILE_ACTION_MODIFIED = 0x00000003
@@ -22,61 +23,45 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
     def file_monitor():
-        try:
-            while thread_resume.wait():
-                # File monitoring
-                path_to_watch = SYSTEM_DRIVE + "\\"
+        while thread_resume.wait():
+            # File monitoring
+            path_to_watch = SYSTEM_DRIVE + "\\"
+            hDir = win32file.CreateFile(
+                path_to_watch,
+                FILE_LIST_DIRECTORY,
+                1,
+                win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,
+                None,
+                win32con.OPEN_EXISTING,
+                win32con.FILE_FLAG_BACKUP_SEMANTICS,
+                None
+            )
 
-                kernel32 = ctypes.windll.kernel32
+            results = win32file.ReadDirectoryChangesW(
+                hDir,
+                1024,
+                True,
+                win32con.FILE_NOTIFY_CHANGE_FILE_NAME |
+                win32con.FILE_NOTIFY_CHANGE_DIR_NAME |
+                win32con.FILE_NOTIFY_CHANGE_ATTRIBUTES |
+                win32con.FILE_NOTIFY_CHANGE_SIZE |
+                win32con.FILE_NOTIFY_CHANGE_LAST_WRITE |
+                win32con.FILE_NOTIFY_CHANGE_SECURITY |
+                FILE_ACTION_ADDED |
+                FILE_ACTION_MODIFIED |
+                FILE_ACTION_REMOVED |
+                FILE_NOTIFY_CHANGE_LAST_ACCESS,
+                None,
+                None
+            )
 
-                hDir = kernel32.CreateFileW(
-                    path_to_watch,
-                    FILE_LIST_DIRECTORY,
-                    win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,
-                    None,
-                    win32con.OPEN_EXISTING,
-                    win32con.FILE_FLAG_BACKUP_SEMANTICS,
-                    None
-                )
+            for action, file in results:
+                path_to_scan = os.path.join(path_to_watch, file)
+                print(path_to_scan)  # Print the path for debugging purposes
+                result3 = XylentScanner.scanFile(path_to_scan)
+                results_queue.put(result3)  # Put the result in the queue
+                XYLENT_SCAN_CACHE.setVal(path_to_scan, result3)
 
-                if hDir == -1:
-                    print(f"Failed to open directory: {path_to_watch}")
-                    return
-
-                buf = ctypes.create_string_buffer(1024)
-                bytes_returned = ctypes.c_ulong()
-
-                result = kernel32.ReadDirectoryChangesW(
-                    hDir,
-                    buf,
-                    1024,
-                    True,
-                    win32con.FILE_NOTIFY_CHANGE_FILE_NAME |
-                    win32con.FILE_NOTIFY_CHANGE_DIR_NAME |
-                    win32con.FILE_NOTIFY_CHANGE_ATTRIBUTES |
-                    win32con.FILE_NOTIFY_CHANGE_SIZE |
-                    win32con.FILE_NOTIFY_CHANGE_LAST_WRITE |
-                    win32con.FILE_NOTIFY_CHANGE_SECURITY |
-                    FILE_ACTION_ADDED |
-                    FILE_ACTION_MODIFIED |
-                    FILE_ACTION_REMOVED |
-                    FILE_NOTIFY_CHANGE_LAST_ACCESS,
-                    ctypes.byref(bytes_returned),
-                    None,
-                    None
-                )
-
-                if not result:
-                    print(f"Failed to read directory changes: {path_to_watch}")
-
-                for action, file in buf[32:32 + bytes_returned.value].decode('utf-16').split('\x00\x00'):
-                    path_to_scan = os.path.join(path_to_watch, file)
-                    print(path_to_scan)  # Print the path for debugging purposes
-                    result3 = XylentScanner.scanFile(path_to_scan)
-                    results_queue.put(result3)  # Put the result in the queue
-                    XYLENT_SCAN_CACHE.setVal(path_to_scan, result3) 
-        except Exception as e:
-            print(f"Error in file_monitor: {e}")
     def watch_processes():
         global printed_processes
         global previous_list
