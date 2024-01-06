@@ -5,7 +5,7 @@ def systemWatcher(XylentScanner,thread_resume):
     XYLENT_SCAN_CACHE  = ParseJson('./config', 'xylent_scancache', {})
     while thread_resume.wait():
         try:
-            # Run monitor.exe and capture the output
+            # Start monitor.exe and capture the output
             process = subprocess.Popen(['monitor.exe'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = process.communicate()
 
@@ -21,4 +21,4 @@ def systemWatcher(XylentScanner,thread_resume):
                     XYLENT_SCAN_CACHE.setVal(line.strip(), verdict)
 
         except Exception as e:
-            print(e)
+            print(f"An error occurred: {e}")
