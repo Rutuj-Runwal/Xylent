@@ -1,24 +1,34 @@
 from parseJson import ParseJson
 import subprocess
+import threading
 
 def systemWatcher(XylentScanner,thread_resume):
     XYLENT_SCAN_CACHE  = ParseJson('./config', 'xylent_scancache', {})
-    while thread_resume.wait():
-        try:
-            # Start monitor.exe and capture the output
-            process = subprocess.Popen(['monitor.exe'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = process.communicate()
+    process = subprocess.Popen(['monitor.exe'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
-            # Ensure the process has completed
-            if process.poll() is not None:
-                print(stdout.decode('utf-8'))
-                print(stderr.decode('utf-8'))
+    def stdout_thread(process):
+        while True:
+            output = process.stdout.readline()
+            if output == '' and process.poll() is not None:
+                break
+            if output:
+                print(f"Scanning file: {output.strip()}")  # Print the name of the file being scanned
+                verdict = XylentScanner.scanFile(output.strip())
+                XYLENT_SCAN_CACHE.setVal(output.strip(), verdict)
 
-                # Scan each line of the output
-                for line in stdout.decode('utf-8').split('\n'):
-                    print(f"Scanning file: {line.strip()}")  # Print the name of the file being scanned
-                    verdict = XylentScanner.scanFile(line.strip())
-                    XYLENT_SCAN_CACHE.setVal(line.strip(), verdict)
+    def stderr_thread(process):
+        while True:
+            error = process.stderr.readline()
+            if error == '' and process.poll() is not None:
+                break
+            if error:
+                print(f"Error: {error.strip()}")
 
-        except Exception as e:
-            print(f"An error occurred: {e}")
+    stdout_t = threading.Thread(target=stdout_thread, args=(process,))
+    stderr_t = threading.Thread(target=stderr_thread, args=(process,))
+
+    stdout_t.start()
+    stderr_t.start()
+
+    stdout_t.join()
+    stderr_t.join()
