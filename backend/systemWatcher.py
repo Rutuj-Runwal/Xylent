@@ -1,7 +1,7 @@
 from parseJson import ParseJson
 import subprocess
 
-def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
+def systemWatcher(XylentScanner,thread_resume):
     XYLENT_SCAN_CACHE  = ParseJson('./config', 'xylent_scancache', {})
     while thread_resume.wait():
         try:
