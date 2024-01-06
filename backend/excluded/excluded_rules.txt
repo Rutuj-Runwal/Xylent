@@ -1282,3 +1282,4 @@
 "math_entropy_0",
 "capa_resolve_path_using_msvcrt",
 "WormWin32DorkbotSampleA",
+"Free_VPN",
