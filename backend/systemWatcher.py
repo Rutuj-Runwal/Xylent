@@ -16,6 +16,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
                 # Scan each line of the output
                 for line in stdout.decode('utf-8').split('\n'):
+                    print(f"Scanning file: {line.strip()}")  # Print the name of the file being scanned
                     verdict = XylentScanner.scanFile(line.strip())
                     XYLENT_SCAN_CACHE.setVal(line.strip(), verdict)
 
