@@ -76,7 +76,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     results_queue.put(result3)  # Put the result in the queue
                     XYLENT_SCAN_CACHE.setVal(path_to_scan, result3) 
         except Exception as e:
-            print(f"Error in monitor_directory: {e}")
+            print(f"Error in file_monitor: {e}")
     def watch_processes():
         global printed_processes
         global previous_list
