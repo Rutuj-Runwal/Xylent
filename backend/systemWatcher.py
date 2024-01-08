@@ -2,8 +2,6 @@ import os
 import win32file
 import win32con
 from queue import Queue
-import psutil
-import concurrent.futures
 from parseJson import ParseJson
 
 FILE_ACTION_ADDED = 0x00000001
@@ -15,59 +13,58 @@ FILE_NOTIFY_CHANGE_LAST_ACCESS = 0x00000020
 # Initialize ParseJson
 XYLENT_NEW_PROCESS_INFO = ParseJson('./config', 'new_processes.json', {})
 
-# Add global declarations for 'printed_processes' and 'previous_list'
-printed_processes = set()
-previous_list = set()
 results_queue = Queue()  # Define results_queue as a global variable
+
+FILE_LIST_DIRECTORY = 0x0001
+FILE_NOTIFY_CHANGE_FILE_NAME = 0x0001
+FILE_NOTIFY_CHANGE_DIR_NAME = 0x0002
+FILE_NOTIFY_CHANGE_ATTRIBUTES = 0x0004
+FILE_NOTIFY_CHANGE_SIZE = 0x0008
+FILE_NOTIFY_CHANGE_LAST_WRITE = 0x0010
+FILE_NOTIFY_CHANGE_SECURITY = 0x0100
+FILE_NOTIFY_CHANGE_LAST_ACCESS = 0x00000020
+FILE_SHARE_READ = 0x00000001
+FILE_SHARE_WRITE = 0x00000002
+FILE_SHARE_DELETE = 0x00000004
+OPEN_EXISTING = 3
+FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
+
+BUF_LEN = 1024 * (win32con.MAX_PATH + 1)
+
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
-
-    def file_monitor():
-        while thread_resume.wait():
-            # File monitoring
-            path_to_watch = SYSTEM_DRIVE + "\\"
-            hDir = win32file.CreateFile(
-                path_to_watch,
-                FILE_LIST_DIRECTORY,
-                1,
-                win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,
-                None,
-                win32con.OPEN_EXISTING,
-                win32con.FILE_FLAG_BACKUP_SEMANTICS,
-                None
-            )
-
+    dir_handle = win32file.CreateFile(
+        SYSTEM_DRIVE,
+        FILE_LIST_DIRECTORY,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        None,
+        OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS,
+        None
+    )
+    try:
+        while thread_resume.is_set():  # Use is_set() to check the threading event
             results = win32file.ReadDirectoryChangesW(
-                hDir,
-                1024,
+                dir_handle,
+                BUF_LEN,
                 True,
-                win32con.FILE_NOTIFY_CHANGE_FILE_NAME |
-                win32con.FILE_NOTIFY_CHANGE_DIR_NAME |
-                win32con.FILE_NOTIFY_CHANGE_ATTRIBUTES |
-                win32con.FILE_NOTIFY_CHANGE_SIZE |
-                win32con.FILE_NOTIFY_CHANGE_LAST_WRITE |
-                win32con.FILE_NOTIFY_CHANGE_SECURITY |
-                FILE_ACTION_ADDED |
-                FILE_ACTION_MODIFIED |
-                FILE_ACTION_REMOVED |
+                FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |
+                FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |
+                FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SECURITY |
                 FILE_NOTIFY_CHANGE_LAST_ACCESS,
                 None,
                 None
             )
 
-            for action, file in results:
-                path_to_scan = os.path.join(path_to_watch, file)
-                print(path_to_scan)  # Print the path for debugging purposes
-                result3 = XylentScanner.scanFile(path_to_scan)
-                results_queue.put(result3)  # Put the result in the queue
-                XYLENT_SCAN_CACHE.setVal(path_to_scan, result3)
+            for action, file_name in results:
+                full_path = os.path.join(SYSTEM_DRIVE, file_name)
+                print(full_path)
+                result = XylentScanner.scanFile(full_path)
+                results_queue.put(result)  # Put the result in the queue
+                XYLENT_SCAN_CACHE.setVal(full_path, result)
 
-    # Create a ThreadPoolExecutor
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit tasks to the executor
-        monitor_thread_future = executor.submit(file_monitor)
-
-    # Wait for all tasks to complete
-    concurrent.futures.wait([monitor_thread_future])
-
-    print("RTP waiting to start...")
+    except KeyboardInterrupt:
+        pass
+    finally:
+        win32file.CloseHandle(dir_handle)
+        print("RTP waiting to start...")
