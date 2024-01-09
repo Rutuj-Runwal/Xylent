@@ -9,10 +9,11 @@ from parseJson import ParseJson
 FILE_ACTION_ADDED = 0x00000001
 FILE_ACTION_REMOVED = 0x00000002
 FILE_ACTION_MODIFIED = 0x00000003
+FILE_NOTIFY_CHANGE_LAST_ACCESS = 0x00000020
+FILE_LIST_DIRECTORY = 0x0001
 
 # Initialize ParseJson
 XYLENT_NEW_PROCESS_INFO = ParseJson('./config', 'new_processes.json', {})
-FILE_NOTIFY_CHANGE_LAST_ACCESS = 0x00000020
 
 # Add global declarations for 'printed_processes' and 'previous_list'
 printed_processes = set()
@@ -28,7 +29,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             hDir = win32file.CreateFile(
                 path_to_watch,
                 1,
-                win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,
+                win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE | FILE_LIST_DIRECTORY,
                 None,
                 win32con.OPEN_EXISTING,
                 win32con.FILE_FLAG_BACKUP_SEMANTICS,
