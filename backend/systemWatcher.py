@@ -4,6 +4,7 @@ import win32con
 from queue import Queue
 import psutil
 import concurrent.futures
+import threading
 from parseJson import ParseJson
 
 FILE_ACTION_ADDED = 0x00000001
@@ -143,7 +144,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"Running File: {exe}")
             printed_processes.add(exe)
             result0 = XylentScanner.scanFile(exe)
-            watch_queue.put(result0)  # Put the result in the queue
+            results_queue.put(result0)  # Put the result in the queue
             XYLENT_SCAN_CACHE.setVal(exe,result0)
             parent_process_info = get_parent_process_info(pid)
             if parent_process_info is None or parent_process_info.get('exe') is None:
@@ -161,7 +162,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
             message = f"Path: {exe}, Parent Process Path: {parent_path}, Command Line: {cmdline}"
             result = XylentScanner.scanFile(parent_path)
-            watch_queue.put(result)  # Put the result in the queue
+            results_queue.put(result)  # Put the result in the queue
             XYLENT_SCAN_CACHE.setVal(parent_path,result)
             # Print to the console
             print("New Process Detected:", message)
@@ -174,7 +175,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     # Assuming you have a method named 'scanFile' in your Scanner class
                     for path in paths:
                         result1 = XylentScanner.scanFile(path)
-                        watch_queue.put(result1)  # Put the result in the queue
+                        results_queue.put(result1)  # Put the result in the queue
                         XYLENT_SCAN_CACHE.setVal(path,result1)
 
     def get_parent_process_info(file_path):
@@ -200,9 +201,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Create a ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:
     # Submit tasks to the executor
-     mouse_listener_thread = threading.Thread(target=lambda: pynput.mouse.Listener(on_click=on_mouse_click).start())
-     mouse_listener_thread.start()
-
      monitor_thread_future = executor.submit(file_monitor)
      watch_processes_thread_future = executor.submit(watch_processes)
 
