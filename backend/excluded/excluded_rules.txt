@@ -1278,7 +1278,7 @@
 "UUEncodeTable__8_byt_ASC_64_",
 "github",
 "jpeg_file",
-"metaspolit",
+"metasploit",
 "math_entropy_0",
 "capa_resolve_path_using_msvcrt",
 "WormWin32DorkbotSampleA",
