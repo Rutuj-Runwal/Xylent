@@ -145,6 +145,15 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             result0 = XylentScanner.scanFile(exe)
             results_queue.put(result0)  # Put the result in the queue
             XYLENT_SCAN_CACHE.setVal(exe,result0)
+
+            # Scan the command line first
+            if isinstance(cmdline, list):  # Ensure cmdline is a list
+                for arg in cmdline:
+                    result_cmdline = XylentScanner.scanFile(arg)
+                    results_queue.put(result_cmdline)  # Put the result in the queue
+                    XYLENT_SCAN_CACHE.setVal(arg, result_cmdline)
+
+            # Continue with other scans
             parent_process_info = get_parent_process_info(pid)
             if parent_process_info is None or parent_process_info.get('exe') is None:
                 return  # Skip processing if parent process info is None or has no executable information
