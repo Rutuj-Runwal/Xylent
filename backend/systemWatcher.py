@@ -150,7 +150,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                 paths = [arg for arg in cmdline if os.path.isabs(arg) and os.path.exists(arg)]
                 if paths:
                     print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
-                    # Assuming you have a method named 'scanFile' in your Scanner class
                     for path in paths:
                         result1 = XylentScanner.scanFile(path)
                         results_queue.put(result1)  # Put the result in the queue
