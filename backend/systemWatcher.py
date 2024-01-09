@@ -162,8 +162,10 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     # Include the running file itself in the path_to_scan
             result2 = XylentScanner.scanFile(exe)
             results_queue.put(result2)  # Put the result in the queue
+            XYLENT_SCAN_CACHE.setVal(exe,result2)
             result3 = XylentScanner.scanFile(parent_path)
             results_queue.put(result3)  # Put the result in the queue
+            XYLENT_SCAN_CACHE.setVal(parent_path,result3)
             # Print to the console
             print("New Process Detected:", message)
 
@@ -176,6 +178,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     for path in paths:
                         result = XylentScanner.scanFile(path)
                         results_queue.put(result)  # Put the result in the queue
+                        XYLENT_SCAN_CACHE.setVal(path,result)
 
     def get_parent_process_info(file_path):
         try:
