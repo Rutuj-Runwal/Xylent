@@ -1,8 +1,8 @@
+import ctypes
 import os
 import win32file
 import win32con
 from queue import Queue
-import psutil
 import concurrent.futures
 import threading
 from parseJson import ParseJson
@@ -20,6 +20,7 @@ XYLENT_NEW_PROCESS_INFO = ParseJson('./config', 'new_processes.json', {})
 printed_processes = set()
 previous_list = set()
 results_queue = Queue()  # Define results_queue as a global variable
+
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
 
@@ -120,18 +121,75 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
     def get_running_processes():
         processes = set()
-        for p in psutil.process_iter(['exe', 'cmdline', 'ppid']):
-            try:
-                if p.info is not None and 'exe' in p.info:
-                    exe = p.info['exe']
-                    cmdline = tuple(p.info.get('cmdline', []))
-                    ppid = p.info.get('ppid', None)
-                    processes.add((exe, cmdline, ppid))
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, TypeError):
-                pass  # Skip processes that are inaccessible or no longer exist
-            except Exception as e:
-                print(f"Error getting process info: {e}")
+        # Enumerate all processes
+        for pid in range(1, 32767):  # Maximum possible PID on Windows is 32767
+            exe_path = get_process_info(pid)
+            if exe_path:
+                cmdline = get_cmdline(pid)
+                ppid = get_parent_pid(pid)
+                processes.add((exe_path, cmdline, ppid))
         return processes
+
+    def get_process_info(pid):
+        try:
+            process_handle = ctypes.windll.kernel32.OpenProcess(0x0400 | 0x0010, False, pid)
+            if process_handle:
+                # Get process information
+                buffer_size = 1000
+                buffer = ctypes.create_unicode_buffer(buffer_size)
+                ctypes.windll.kernel32.QueryFullProcessImageNameW(process_handle, 0, buffer, ctypes.byref(buffer_size))
+                exe_path = buffer.value
+
+                return exe_path
+
+        except Exception as e:
+            print(f"Error getting process info: {e}")
+
+        finally:
+            if process_handle:
+                ctypes.windll.kernel32.CloseHandle(process_handle)
+
+        return None
+
+    def get_cmdline(pid):
+        try:
+            process_handle = ctypes.windll.kernel32.OpenProcess(0x0400 | 0x0010, False, pid)
+            if process_handle:
+                # Get command line
+                buffer_size = 1000
+                buffer = ctypes.create_unicode_buffer(buffer_size)
+                ctypes.windll.kernel32.GetModuleFileNameExW(process_handle, 0, buffer, buffer_size)
+                cmdline = buffer.value
+
+                return cmdline
+
+        except Exception as e:
+            print(f"Error getting cmdline: {e}")
+
+        finally:
+            if process_handle:
+                ctypes.windll.kernel32.CloseHandle(process_handle)
+
+        return None
+
+    def get_parent_pid(pid):
+        try:
+            process_handle = ctypes.windll.kernel32.OpenProcess(0x0400 | 0x0010, False, pid)
+            if process_handle:
+                ppid_buffer = ctypes.c_ulong()
+                ctypes.windll.kernel32.GetWindowThreadProcessId(ctypes.windll.user32.GetShellWindow(), ctypes.byref(ppid_buffer))
+                parent_pid = ppid_buffer.value
+
+                return parent_pid
+
+        except Exception as e:
+            print(f"Error getting parent pid: {e}")
+
+        finally:
+            if process_handle:
+                ctypes.windll.kernel32.CloseHandle(process_handle)
+
+        return None
 
     def new_process_checker(process_info, XylentScanner, results_queue):
         global printed_processes
@@ -144,11 +202,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             print(f"Running File: {exe}")
             printed_processes.add(exe)
 
-            parent_process_info = get_parent_process_info(pid)
-            if parent_process_info is None or parent_process_info.get('exe') is None:
-                return  # Skip processing if parent process info is None or has no executable information
-
-            parent_path = parent_process_info['exe']
+            parent_path = get_process_info(get_parent_pid(pid))
 
             # Check if parent and child have the same location
             if parent_path != "Unknown" and exe.startswith(parent_path):
@@ -179,34 +233,14 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                         result = XylentScanner.scanFile(path)
                         results_queue.put(result)  # Put the result in the queue
                         XYLENT_SCAN_CACHE.setVal(path,result)
-
-    def get_parent_process_info(file_path):
-        try:
-            process = psutil.Process(os.getpid())
-            for parent in process.parents():
-                if parent.exe() == file_path:
-                    return {
-                        'name': parent.name(),
-                        'exe': parent.exe(),
-                        'cmdline': parent.cmdline(),
-                        'pid': parent.pid,
-                    }
-            return None
-        except psutil.NoSuchProcess:
-            print(f"Error: No such process with path {file_path}")
-        except psutil.AccessDenied:
-            print(f"Error: Access denied while retrieving information for path {file_path}")
-        except Exception as e:
-            print(f"An unexpected error occurred while getting parent process info for path {file_path}: {e}")
-
-        return None
+    
     # Create a ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:
-    # Submit tasks to the executor
-     monitor_thread_future = executor.submit(file_monitor)
-     watch_processes_thread_future = executor.submit(watch_processes)
+        # Submit tasks to the executor
+        monitor_thread_future = executor.submit(file_monitor)
+        watch_processes_thread_future = executor.submit(watch_processes)
 
-    # Wait for all tasks to complete
-    concurrent.futures.wait([monitor_thread_future, watch_processes_thread_future])
+        # Wait for all tasks to complete
+        concurrent.futures.wait([monitor_thread_future, watch_processes_thread_future])
 
     print("RTP waiting to start...")
