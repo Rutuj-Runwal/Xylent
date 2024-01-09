@@ -2,76 +2,64 @@ import os
 import win32file
 import win32con
 from queue import Queue
-from parseJson import ParseJson
 import psutil
 import concurrent.futures
+from parseJson import ParseJson
 
 FILE_ACTION_ADDED = 0x00000001
 FILE_ACTION_REMOVED = 0x00000002
 FILE_ACTION_MODIFIED = 0x00000003
-FILE_LIST_DIRECTORY = 0x0001
-FILE_NOTIFY_CHANGE_LAST_ACCESS = 0x00000020
 
 # Initialize ParseJson
 XYLENT_NEW_PROCESS_INFO = ParseJson('./config', 'new_processes.json', {})
-
-results_queue = Queue()  # Define results_queue as a global variable
-
-FILE_LIST_DIRECTORY = 0x0001
-FILE_NOTIFY_CHANGE_FILE_NAME = 0x0001
-FILE_NOTIFY_CHANGE_DIR_NAME = 0x0002
-FILE_NOTIFY_CHANGE_ATTRIBUTES = 0x0004
-FILE_NOTIFY_CHANGE_SIZE = 0x0008
-FILE_NOTIFY_CHANGE_LAST_WRITE = 0x0010
-FILE_NOTIFY_CHANGE_SECURITY = 0x0100
 FILE_NOTIFY_CHANGE_LAST_ACCESS = 0x00000020
-FILE_SHARE_READ = 0x00000001
-FILE_SHARE_WRITE = 0x00000002
-FILE_SHARE_DELETE = 0x00000004
-OPEN_EXISTING = 3
-FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
 
-BUF_LEN = 1024 * (win32con.MAX_PATH + 1)
-
+# Add global declarations for 'printed_processes' and 'previous_list'
+printed_processes = set()
+previous_list = set()
+results_queue = Queue()  # Define results_queue as a global variable
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
-    while thread_resume.is_set():
-        def file_monitor():
-            XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
-            dir_handle = win32file.CreateFile(
-                SYSTEM_DRIVE,
-                FILE_LIST_DIRECTORY,
-                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+    XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
+
+    def file_monitor():
+        while thread_resume.wait():
+            # File monitoring
+            path_to_watch = SYSTEM_DRIVE + "\\"
+            hDir = win32file.CreateFile(
+                path_to_watch,
+                1,
+                win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,
                 None,
-                OPEN_EXISTING,
-                FILE_FLAG_BACKUP_SEMANTICS,
+                win32con.OPEN_EXISTING,
+                win32con.FILE_FLAG_BACKUP_SEMANTICS,
                 None
             )
-            try:
-                while thread_resume.is_set():  # Use is_set() to check the threading event
-                    results = win32file.ReadDirectoryChangesW(
-                        dir_handle,
-                        BUF_LEN,
-                        True,
-                        FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |
-                        FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |
-                        FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SECURITY |
-                        FILE_NOTIFY_CHANGE_LAST_ACCESS,
-                        None,
-                        None
-                    )
 
-                    for action, file_name in results:
-                        full_path = os.path.join(SYSTEM_DRIVE, file_name)
-                        full_path = os.path.abspath(full_path)  # Ensure the full path is absolute
-                        result = XylentScanner.scanFile(full_path)
-                        results_queue.put((full_path, result))  # Put the result and path in the queue
-                        XYLENT_SCAN_CACHE.setVal(full_path, result)
-                        print(full_path)  # Print the path here
+            results = win32file.ReadDirectoryChangesW(
+                hDir,
+                1024,
+                True,
+                win32con.FILE_NOTIFY_CHANGE_FILE_NAME |
+                win32con.FILE_NOTIFY_CHANGE_DIR_NAME |
+                win32con.FILE_NOTIFY_CHANGE_ATTRIBUTES |
+                win32con.FILE_NOTIFY_CHANGE_SIZE |
+                win32con.FILE_NOTIFY_CHANGE_LAST_WRITE |
+                win32con.FILE_NOTIFY_CHANGE_SECURITY |
+                FILE_NOTIFY_CHANGE_LAST_ACCESS |
+                FILE_ACTION_ADDED |
+                FILE_ACTION_MODIFIED |
+                FILE_ACTION_REMOVED,
+                None,
+                None
+            )
 
-            except KeyboardInterrupt:
-                pass
-            finally:
-                win32file.CloseHandle(dir_handle)
+            for action, file in results:
+                path_to_scan = os.path.join(path_to_watch, file)
+                print(path_to_scan)  # Print the path for debugging purposes
+                result3 = XylentScanner.scanFile(path_to_scan)
+                results_queue.put(result3)  # Put the result in the queue
+                XYLENT_SCAN_CACHE.setVal(path_to_scan, result3)
+
     def watch_processes():
         global printed_processes
         global previous_list
@@ -155,6 +143,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             printed_processes.add(exe)
             result0 = XylentScanner.scanFile(exe)
             results_queue.put(result0)  # Put the result in the queue
+            XYLENT_SCAN_CACHE.setVal(exe,result0)
             parent_process_info = get_parent_process_info(pid)
             if parent_process_info is None or parent_process_info.get('exe') is None:
                 return  # Skip processing if parent process info is None or has no executable information
@@ -172,6 +161,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             message = f"Path: {exe}, Parent Process Path: {parent_path}, Command Line: {cmdline}"
             result = XylentScanner.scanFile(parent_path)
             results_queue.put(result)  # Put the result in the queue
+            XYLENT_SCAN_CACHE.setVal(parent_path,result)
             # Print to the console
             print("New Process Detected:", message)
 
@@ -184,6 +174,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     for path in paths:
                         result1 = XylentScanner.scanFile(path)
                         results_queue.put(result1)  # Put the result in the queue
+                        XYLENT_SCAN_CACHE.setVal(path,result1)
 
     def get_parent_process_info(file_path):
         try:
