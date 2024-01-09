@@ -146,12 +146,16 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             results_queue.put(result0)  # Put the result in the queue
             XYLENT_SCAN_CACHE.setVal(exe,result0)
 
-            # Scan the command line first
+            # Check if the command line includes paths
             if isinstance(cmdline, list):  # Ensure cmdline is a list
-                for arg in cmdline:
-                    result_cmdline = XylentScanner.scanFile(arg)
-                    results_queue.put(result_cmdline)  # Put the result in the queue
-                    XYLENT_SCAN_CACHE.setVal(arg, result_cmdline)
+                paths = [arg for arg in cmdline if os.path.isabs(arg) and os.path.exists(arg)]
+                if paths:
+                    print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
+                    # Assuming you have a method named 'scanFile' in your Scanner class
+                    for path in paths:
+                        result_cmdline = XylentScanner.scanFile(path)
+                        results_queue.put(result_cmdline)  # Put the result in the queue
+                        XYLENT_SCAN_CACHE.setVal(path, result_cmdline)
 
             # Continue with other scans
             parent_process_info = get_parent_process_info(pid)
