@@ -1,8 +1,9 @@
 import os
 import ctypes
+import subprocess
 from parseJson import ParseJson
 
-def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume, pathToScan):
+def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Initialize the cache for scanned files
     XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
     XYLENT_CACHE_MAXSIZE = 500000  # 500KB
@@ -22,10 +23,12 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume, pathToScan):
     my_dll.StartMonitoring.restype = None
     my_dll.StartMonitoring(monitored_path)
 
-    # Continuously monitor and scan files
     while thread_resume.wait():
         try:
-            # Check if there is a file path to scan
+            # Run the monitor.dll and capture its output
+            result = subprocess.run([dll_path], capture_output=True, text=True)
+            pathToScan = result.stdout.strip()
+
             if pathToScan:
                 # Perform the file scanning operation (replace XylentScanner.scanFile with your actual scanning logic)
                 verdict = XylentScanner.scanFile(pathToScan)
