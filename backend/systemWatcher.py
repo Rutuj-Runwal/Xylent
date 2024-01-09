@@ -28,8 +28,8 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             path_to_watch = SYSTEM_DRIVE + "\\"
             hDir = win32file.CreateFile(
                 path_to_watch,
-                1,
-                win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE | FILE_LIST_DIRECTORY,
+                FILE_LIST_DIRECTORY,
+                win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE |
                 None,
                 win32con.OPEN_EXISTING,
                 win32con.FILE_FLAG_BACKUP_SEMANTICS,
