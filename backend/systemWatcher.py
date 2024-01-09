@@ -145,7 +145,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             result0 = XylentScanner.scanFile(exe)
             results_queue.put(result0)  # Put the result in the queue
             XYLENT_SCAN_CACHE.setVal(exe,result0)
-
             # Check if the command line includes paths
             if isinstance(cmdline, list):  # Ensure cmdline is a list
                 paths = [arg for arg in cmdline if os.path.isabs(arg) and os.path.exists(arg)]
@@ -153,9 +152,9 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
                     print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
                     # Assuming you have a method named 'scanFile' in your Scanner class
                     for path in paths:
-                        result_cmdline = XylentScanner.scanFile(path)
-                        results_queue.put(result_cmdline)  # Put the result in the queue
-                        XYLENT_SCAN_CACHE.setVal(path, result_cmdline)
+                        result1 = XylentScanner.scanFile(path)
+                        results_queue.put(result1)  # Put the result in the queue
+                        XYLENT_SCAN_CACHE.setVal(path,result1)
 
             # Continue with other scans
             parent_process_info = get_parent_process_info(pid)
@@ -178,17 +177,6 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             XYLENT_SCAN_CACHE.setVal(parent_path,result)
             # Print to the console
             print("New Process Detected:", message)
-
-            # Check if the command line includes paths
-            if isinstance(cmdline, list):  # Ensure cmdline is a list
-                paths = [arg for arg in cmdline if os.path.isabs(arg) and os.path.exists(arg)]
-                if paths:
-                    print(f"Command Line includes paths: {paths}, scanning related folder for process {exe}")
-                    # Assuming you have a method named 'scanFile' in your Scanner class
-                    for path in paths:
-                        result1 = XylentScanner.scanFile(path)
-                        results_queue.put(result1)  # Put the result in the queue
-                        XYLENT_SCAN_CACHE.setVal(path,result1)
 
     def get_parent_process_info(file_path):
         try:
@@ -213,10 +201,10 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Create a ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # Submit tasks to the executor
-        monitor_thread_future = executor.submit(file_monitor)
         watch_processes_thread_future = executor.submit(watch_processes)
+        monitor_thread_future = executor.submit(file_monitor)
 
     # Wait for all tasks to complete
-    concurrent.futures.wait([monitor_thread_future, watch_processes_thread_future])
+    concurrent.futures.wait([watch_processes_thread_future,monitor_thread_future,])
 
     print("RTP waiting to start...")
