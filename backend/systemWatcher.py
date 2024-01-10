@@ -1,6 +1,5 @@
 import os
 import ctypes
-import subprocess
 from parseJson import ParseJson
 
 def scan_and_update(XylentScanner, XYLENT_SCAN_CACHE, pathToScan):
@@ -29,23 +28,22 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
     # Load the DLL
     my_dll = ctypes.CDLL(dll_path)
 
-    # Call the StartMonitoring function
-    monitored_path = SYSTEM_DRIVE + "\\"
+    # Define the StartMonitoring function
     my_dll.StartMonitoring.argtypes = [ctypes.c_wchar_p]
-    my_dll.StartMonitoring.restype = None
-    my_dll.StartMonitoring(monitored_path)
+    my_dll.StartMonitoring.restype = ctypes.c_wchar_p
+
+    monitored_path = SYSTEM_DRIVE + "\\"
 
     while thread_resume.wait():
         try:
-            # Run the monitor.dll and capture its output in real-time
-            with subprocess.Popen([dll_path], stdout=subprocess.PIPE, text=True) as process:
-                for line in process.stdout:
-                    pathToScan = line.strip()
-                    print("Path to Scan:", pathToScan)
+            # Call the StartMonitoring function from the DLL
+            output = my_dll.StartMonitoring(monitored_path)
 
-                    if pathToScan:
-                        # Call the scanning function
-                        scan_and_update(XylentScanner, XYLENT_SCAN_CACHE, pathToScan)
+            # Now the output of the print statements is in text_trap.getvalue()
+            print("DLL Output:", output)
+
+            # Call the scanning function
+            scan_and_update(XylentScanner, XYLENT_SCAN_CACHE, output.strip())
         except Exception as e:
             # Handle exceptions during the scanning process
             print("Error during scanning loop:", e)
