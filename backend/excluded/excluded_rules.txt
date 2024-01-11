@@ -1286,3 +1286,4 @@
 "j233f_791f6880c0000b32",
 "Detect_EventLogTampering",	
 "warning_vb_macro",
+"capa_get_domain_trust_relationships",
