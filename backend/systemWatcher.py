@@ -1,28 +1,21 @@
 import os
-import ctypes
-import threading
 from queue import Queue
+import subprocess
 
-verdict_queue = Queue() 
+verdict_queue = Queue()
 
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
-    # Load the DLL from the monitordebug directory
-    monitor_dll_path = os.path.abspath('.\\monitor\\x64\\Debug\\monitor.dll')
-    monitor_dll = ctypes.CDLL(monitor_dll_path)
-
-    # Define the StartMonitoring function
-    start_monitoring = monitor_dll.StartMonitoring
-    start_monitoring.argtypes = [ctypes.c_wchar_p]
-    start_monitoring.restype = None
-
-    # Start monitoring the specified path in a separate thread
-    monitor_thread = threading.Thread(target=start_monitoring, args=(os.path.abspath(SYSTEM_DRIVE),))
-    monitor_thread.start()
+    # Run the monitor.exe in a separate process
+    monitor_exe_path = os.path.abspath('.\\monitor\\x64\\Debug\\monitor.exe')
+    subprocess.Popen([monitor_exe_path, os.path.abspath(SYSTEM_DRIVE)])
 
     while thread_resume.is_set():
         try:
-            with open("output.txt", "r") as file:
+            # Specify the path to output.txt relative to monitor.exe
+            output_txt_path = os.path.abspath('.\\monitor\\x64\\Debug\\output.txt')
+
+            with open(output_txt_path, "r") as file:
                 changes = file.readlines()
 
             for change in changes:
