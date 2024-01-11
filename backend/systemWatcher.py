@@ -12,8 +12,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
 
     while thread_resume.is_set():
         try:
-            # Specify the path to output.txt relative to monitor.exe
-            output_txt_path = os.path.abspath('.\\monitor\\x64\\Debug\\output.txt')
+            output_txt_path = "output.txt"
 
             with open(output_txt_path, "r") as file:
                 changes = file.readlines()
