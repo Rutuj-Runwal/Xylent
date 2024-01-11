@@ -43,20 +43,8 @@ extern "C" __declspec(dllexport) void StartMonitoring(const TCHAR* monitoredPath
     );
 
     if (dir == INVALID_HANDLE_VALUE) {
-        FILE* file;
-        if (_wfopen_s(&file, L"output.txt", L"a") == 0) {
-            _ftprintf(file, _T("Failed to open directory.\n"));
-            fclose(file);
-        }
+        // Handle directory open failure
         free(buffer);
-        return;
-    }
-
-    FILE* file;
-    if (_wfopen_s(&file, L"output.txt", L"a") != 0) {
-        // Handle file opening failure
-        free(buffer);
-        CloseHandle(dir);
         return;
     }
 
@@ -78,30 +66,24 @@ extern "C" __declspec(dllexport) void StartMonitoring(const TCHAR* monitoredPath
             NULL
         )) {
             // Handle ReadDirectoryChangesW failure
-            _ftprintf(file, _T("Failed to read directory changes.\n"));
         }
         else {
             FILE_NOTIFY_INFORMATION* fni = (FILE_NOTIFY_INFORMATION*)buffer;
             TCHAR full_path[MAX_PATH];
 
-            // Ensure proper null-termination
-            full_path[0] = _T('\0');
+            _tcscpy_s(full_path, monitoredPath);
+            _tcscat_s(full_path, _T("\\"));
+            _tcsncat_s(full_path, MAX_PATH, fni->FileName, fni->FileNameLength / sizeof(TCHAR));
 
-            // Copy monitoredPath to full_path
-            _tcsncpy_s(full_path, MAX_PATH, monitoredPath, MAX_PATH - _tcslen(fni->FileName) - 1);
-
-            // Concatenate the filename to full_path
-            _tcsncat_s(full_path, MAX_PATH, fni->FileName, fni->FileNameLength / sizeof(WCHAR));
-
-            // Print to console
             _tprintf(_T("%s\n"), full_path);
 
-            // Output to file
-            _ftprintf(file, _T("%s\n"), full_path);
+            FILE* file;
+            if (_wfopen_s(&file, L"output.txt", L"a") == 0) {
+                _ftprintf(file, _T("%s\n"), full_path);
+                fclose(file);
+            }
 
-            // Release the file handle to allow other programs to read
             CloseHandle(dir);
-            // Reopen the directory to continue monitoring
             dir = CreateFile(
                 monitoredPath,
                 FILE_LIST_DIRECTORY,
@@ -112,16 +94,12 @@ extern "C" __declspec(dllexport) void StartMonitoring(const TCHAR* monitoredPath
                 NULL
             );
 
-            // Handle directory reopening failure
             if (dir == INVALID_HANDLE_VALUE) {
-                _ftprintf(file, _T("Failed to reopen directory for monitoring.\n"));
-                break;  // Exit the loop if reopening fails
+                break;
             }
         }
     }
 
-    // Close the file handle after the loop
-    fclose(file);
     CloseHandle(dir);
     free(buffer);
 }
