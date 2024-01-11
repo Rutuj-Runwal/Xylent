@@ -17,26 +17,22 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     return TRUE;
 }
 
-// dllfunctions.cpp
 #include <windows.h>
 #include <tchar.h>
 #include <stdio.h>
+#include <cstdlib>
 
-#ifdef UNICODE
-#define tcout wprintf
-#else
-#define tcout printf
-#endif
-
-#define BUF_LEN (10 * (sizeof(FILE_NOTIFY_INFORMATION) + MAX_PATH))
-
-extern "C" __declspec(dllexport) void StartMonitoring(const TCHAR * monitoredPath)
+extern "C" __declspec(dllexport) void StartMonitoring(const TCHAR* monitoredPath)
 {
-    TCHAR buffer[BUF_LEN];
-    DWORD bytes_returned;
-    HANDLE dir;
+    DWORD buffer_size = 10 * (sizeof(FILE_NOTIFY_INFORMATION) + MAX_PATH);
+    TCHAR* buffer = (TCHAR*)malloc(buffer_size);
 
-    dir = CreateFile(
+    if (buffer == NULL) {
+        // Handle memory allocation failure
+        return;
+    }
+
+    HANDLE dir = CreateFile(
         monitoredPath,
         FILE_LIST_DIRECTORY,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -47,7 +43,20 @@ extern "C" __declspec(dllexport) void StartMonitoring(const TCHAR * monitoredPat
     );
 
     if (dir == INVALID_HANDLE_VALUE) {
-        tcout(_T("Failed to open directory.\n"));
+        FILE* file;
+        if (_wfopen_s(&file, L"output.txt", L"a") == 0) {
+            _ftprintf(file, _T("Failed to open directory.\n"));
+            fclose(file);
+        }
+        free(buffer);
+        return;
+    }
+
+    FILE* file;
+    if (_wfopen_s(&file, L"output.txt", L"a") != 0) {
+        // Handle file opening failure
+        free(buffer);
+        CloseHandle(dir);
         return;
     }
 
@@ -55,7 +64,7 @@ extern "C" __declspec(dllexport) void StartMonitoring(const TCHAR * monitoredPat
         if (!ReadDirectoryChangesW(
             dir,
             buffer,
-            BUF_LEN,
+            buffer_size,
             TRUE,
             FILE_NOTIFY_CHANGE_FILE_NAME |
             FILE_NOTIFY_CHANGE_DIR_NAME |
@@ -64,21 +73,55 @@ extern "C" __declspec(dllexport) void StartMonitoring(const TCHAR * monitoredPat
             FILE_NOTIFY_CHANGE_LAST_WRITE |
             FILE_NOTIFY_CHANGE_SECURITY |
             FILE_NOTIFY_CHANGE_LAST_ACCESS,
-            &bytes_returned,
+            NULL,
             NULL,
             NULL
         )) {
-            tcout(_T("Failed to read directory changes.\n"));
+            // Handle ReadDirectoryChangesW failure
+            _ftprintf(file, _T("Failed to read directory changes.\n"));
         }
         else {
             FILE_NOTIFY_INFORMATION* fni = (FILE_NOTIFY_INFORMATION*)buffer;
-            _TCHAR full_path[MAX_PATH];
-            _tcscpy_s(full_path, monitoredPath);
+            TCHAR full_path[MAX_PATH];
 
-            _tcsncat_s(full_path, fni->FileName, fni->FileNameLength / sizeof(WCHAR));
-            tcout(_T("%s\n"), full_path);
+            // Ensure proper null-termination
+            full_path[0] = _T('\0');
+
+            // Copy monitoredPath to full_path
+            _tcsncpy_s(full_path, MAX_PATH, monitoredPath, MAX_PATH - _tcslen(fni->FileName) - 1);
+
+            // Concatenate the filename to full_path
+            _tcsncat_s(full_path, MAX_PATH, fni->FileName, fni->FileNameLength / sizeof(WCHAR));
+
+            // Print to console
+            _tprintf(_T("%s\n"), full_path);
+
+            // Output to file
+            _ftprintf(file, _T("%s\n"), full_path);
+
+            // Release the file handle to allow other programs to read
+            CloseHandle(dir);
+            // Reopen the directory to continue monitoring
+            dir = CreateFile(
+                monitoredPath,
+                FILE_LIST_DIRECTORY,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                NULL,
+                OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS,
+                NULL
+            );
+
+            // Handle directory reopening failure
+            if (dir == INVALID_HANDLE_VALUE) {
+                _ftprintf(file, _T("Failed to reopen directory for monitoring.\n"));
+                break;  // Exit the loop if reopening fails
+            }
         }
     }
 
+    // Close the file handle after the loop
+    fclose(file);
     CloseHandle(dir);
+    free(buffer);
 }
