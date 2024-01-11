@@ -69,7 +69,7 @@ def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
             path_to_scan = os.path.join(path_to_watch, file)
 
             # Avoid unnecessary scanning based on specific paths
-            if path_to_scan == "" or XylentScanner.quar.QuarantineDir in path_to_scan:
+            if path_to_scan == "" or XylentScanner.quar.quarantine_dir in path_to_scan:
                 continue
 
             try:
