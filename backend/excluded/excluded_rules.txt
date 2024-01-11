@@ -1290,3 +1290,4 @@
 "capa_get_domain_trust_relationships",
 "cobalt_strike_TSE588C",
 "capa_inject_APC",
+"Detect_SetDebugFilterState",
