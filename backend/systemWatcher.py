@@ -1,65 +1,42 @@
 import os
 import ctypes
-from parseJson import ParseJson
+import threading
+from queue import Queue
 
-def scan_and_update(XylentScanner, XYLENT_SCAN_CACHE, pathToScan):
-    try:
-        # Perform the file scanning operation
-        verdict = XylentScanner.scanFile(pathToScan)
-        # Update the scan cache with the verdict for the scanned file
-        XYLENT_SCAN_CACHE.setVal(pathToScan, verdict)
-    except Exception as e:
-        # Handle exceptions during the scanning process
-        pass  # Sessizce hataları işle, ekrana yazdırma
+verdict_queue = Queue() 
 
 def systemWatcher(XylentScanner, SYSTEM_DRIVE, thread_resume):
-    # Initialize the cache for scanned files
-    XYLENT_SCAN_CACHE = ParseJson('./config', 'xylent_scancache', {})
-    XYLENT_CACHE_MAXSIZE = 500000  # 500KB
 
-    # Specify the name of the DLL file (e.g., monitor_dll.dll)
-    dll_name = "monitor.dll"
-
-    # Specify the full path of the DLL file (in the current folder under the monitordebug folder)
-    dll_path = os.path.join(os.getcwd(), "monitordebug", dll_name)
-
-    # Load the DLL
-    my_dll = ctypes.CDLL(dll_path)
+    # Load the DLL from the monitordebug directory
+    monitor_dll_path = os.path.abspath('.\\monitor\\x64\\Debug\\monitor.dll')
+    monitor_dll = ctypes.CDLL(monitor_dll_path)
 
     # Define the StartMonitoring function
-    my_dll.StartMonitoring.argtypes = [ctypes.c_wchar_p]
-    my_dll.StartMonitoring.restype = ctypes.c_void_p  # Change the restype to c_void_p
+    start_monitoring = monitor_dll.StartMonitoring
+    start_monitoring.argtypes = [ctypes.c_wchar_p]
+    start_monitoring.restype = None
 
-    monitored_path = SYSTEM_DRIVE + "\\"
+    # Start monitoring the specified path in a separate thread
+    monitor_thread = threading.Thread(target=start_monitoring, args=(os.path.abspath(SYSTEM_DRIVE),))
+    monitor_thread.start()
 
-    # Open a file for writing output
-    output_file_path = 'output.txt'
-    with open(output_file_path, 'w') as output_file:
-        while thread_resume.wait():
-            try:
-                # Call the StartMonitoring function from the DLL
-                output = my_dll.StartMonitoring(monitored_path)
+    while thread_resume.is_set():
+        try:
+            with open("output.txt", "r") as file:
+                changes = file.readlines()
 
-                # Convert the wide string output to a regular Python string
-                output_str = ctypes.wstring_at(output).decode("utf-8")
+            for change in changes:
+                pathToScan = os.path.abspath(os.path.join(SYSTEM_DRIVE, change.strip()))
+                print(pathToScan)
 
-                # Write the output to the file
-                output_file.write(output_str + '\n')
+                try:
+                    if pathToScan:
+                        verdict = XylentScanner.scanFile(pathToScan)
+                        verdict_queue.put(verdict)  # Put the result in the queue
+                except Exception as e:
+                    print(e)
+                    print(f"Error processing {pathToScan}")
+        except Exception as e:
+            print(e)
 
-                # Call the scanning function
-                scan_and_update(XylentScanner, XYLENT_SCAN_CACHE, output_str.strip())
-            except Exception as e:
-                # Handle exceptions during the scanning process
-                pass  # Sessizce hataları işle, ekrana yazdırma
-
-            # Check if the scan cache has exceeded the maximum size
-            if os.path.getsize(XYLENT_SCAN_CACHE.PATH) >= XYLENT_CACHE_MAXSIZE:
-                # Purge the scan cache if the size exceeds the limit
-                XYLENT_SCAN_CACHE.purge()
-
-    # Display a message when the systemWatcher is waiting to start
     print("RTP waiting to start...")
-
-    # Clear the content of the output file after scanning
-    with open(output_file_path, 'w') as output_file:
-        output_file.write('')
