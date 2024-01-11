@@ -1288,3 +1288,4 @@
 "Detect_EventLogTampering",	
 "warning_vb_macro",
 "capa_get_domain_trust_relationships",
+"cobalt_strike_TSE588C",
