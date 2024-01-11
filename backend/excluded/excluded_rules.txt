@@ -1241,6 +1241,7 @@
 "APT_Bitter_ZxxZ_Downloader",
 "zip_file",
 "WarpStrings",
+"capa_inject_APC",
 "Warp",
 "PEiD_00013__NET_DLL____Microsoft_",
 "capa_schedule_task_via_command_line",
