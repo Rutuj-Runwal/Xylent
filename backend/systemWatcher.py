@@ -4,8 +4,15 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 import threading
 import shutil
+import psutil
 
 verdict_queue = Queue()
+
+def get_all_running_files():
+    running_files = []
+    for proc in psutil.process_iter(['pid', 'name', 'exe']):
+        running_files.append(proc.info['exe'])
+    return running_files
 
 def systemWatcher(XylentScanner, thread_resume):
     monitor_exe_path = os.path.abspath('.\\monitor\\target\\debug\\monitor.exe')
@@ -27,6 +34,9 @@ def systemWatcher(XylentScanner, thread_resume):
         with ThreadPoolExecutor(max_workers=10000) as executor:
             while thread_resume.is_set():
                 try:
+                    # Get all running files
+                    running_files = get_all_running_files()
+
                     # Copy the output.txt file
                     shutil.copy(output_txt_path, output_copy_path)
 
@@ -34,32 +44,29 @@ def systemWatcher(XylentScanner, thread_resume):
                         file.seek(last_position)
                         changes = file.readlines()
 
-                        if not changes:
-                            # No new data, block until new lines are added
-                            continue
+                        if changes:
+                            for change in changes:
+                                path_to_scan = os.path.abspath(change.strip())
+                                print(path_to_scan)
 
-                        # Collect paths to process simultaneously
-                        paths_to_process = []
-                        for change in changes:
-                            path_to_scan = os.path.abspath(change.strip())
-                            print(path_to_scan)
-
-                            if os.path.exists(path_to_scan):
-                                paths_to_process.append(path_to_scan)
-                            else:
-                                print(f"File does not exist: {path_to_scan}")
+                                if os.path.exists(path_to_scan):
+                                    running_files.append(path_to_scan)
+                                else:
+                                    print(f"File does not exist: {path_to_scan}")
 
                         # Process all collected paths simultaneously using ThreadPoolExecutor
-                        for path in paths_to_process:
+                        futures = [executor.submit(XylentScanner.scanFile, path) for path in running_files]
+                        for future in futures:
                             try:
-                                verdict = XylentScanner.scanFile(path)
+                                verdict = future.result()
                                 verdict_queue.put(verdict)  # Put the result in the queue
                             except Exception as e:
                                 print(e)
                                 print(f"Error scanning {path}")
 
-                        # Update the last position to the end of the file
-                        last_position = file.tell()
+                    # Update the last position to the end of the file
+                    last_position = file.tell()
+
                 except Exception as e:
                     print(e)
 
