@@ -1,4 +1,5 @@
 import os
+import shutil
 from queue import Queue
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
@@ -29,9 +30,13 @@ def systemWatcher(XylentScanner,thread_resume):
         with ThreadPoolExecutor(max_workers=10000) as executor:
             while thread_resume.is_set():
                 try:
-                    with open(output_txt_path, "r") as file:
+                    # Copy the output.txt file
+                    shutil.copy(output_txt_path, "output_copy.txt")
+
+                    with open("output_copy.txt", "r") as file:
                         file.seek(last_position)
                         changes = file.readlines()
+                        file.close()  # Close the file immediately after reading
 
                         if not changes:
                             # No new data, block until new lines are added
