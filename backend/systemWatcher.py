@@ -12,6 +12,10 @@ def systemWatcher(XylentScanner,thread_resume):
 
     output_txt_path = "output.txt"
 
+    # Check if the file exists and clear it
+    if os.path.exists(output_txt_path):
+        open(output_txt_path, 'w').close()
+
     def scan_path(path):
         try:
             verdict = XylentScanner.scanFile(path)
@@ -22,7 +26,7 @@ def systemWatcher(XylentScanner,thread_resume):
 
     def scan_changes():
         last_position = 0
-        with ThreadPoolExecutor(max_workers=100) as executor:
+        with ThreadPoolExecutor(max_workers=10000) as executor:
             while thread_resume.is_set():
                 try:
                     with open(output_txt_path, "r") as file:
@@ -50,7 +54,8 @@ def systemWatcher(XylentScanner,thread_resume):
                                     print(f"Error processing {path_to_scan}")
 
                             # Process all collected paths simultaneously using ThreadPoolExecutor
-                            executor.map(scan_path, paths_to_process)
+                            for path in paths_to_process:
+                                executor.submit(scan_path, path)
 
                             # Update the last position to the end of the file
                             last_position = file.tell()
