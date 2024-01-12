@@ -112,5 +112,5 @@ https://github.com/Rutuj-Runwal/Xylent/assets/59436520/99a0af23-0e1e-4f5e-abcc-c
 ### Acknowledgements and References
 - Use [signature base](https://github.com/Neo23x0/signature-base) by [Florian Roth](https://github.com/Neo23x0) under [Detection Rules license](https://raw.githubusercontent.com/Neo23x0/signature-base/master/LICENSE) for additional detection capabitiies. Place the yare rules in `/backend/signature-base/yara/`
 - Custom simple "Dummy" yara rules - [ruleA](https://github.com/Rutuj-Runwal/Xylent/blob/main/backend/signature-base/yara/xylent_test_pdf.yar) & [ruleB](https://github.com/Rutuj-Runwal/Xylent/blob/main/backend/signature-base/yara/xylent_test_word.yar) to detect test malware( of type .docx and .pdf) designed specifically for Xylent Antivirus
-## Credits
+### Credits
 - Thanks for the malware database at sha256_db.txt https://github.com/anic17/Batch-Antivirus
