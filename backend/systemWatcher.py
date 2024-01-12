@@ -12,10 +12,7 @@ def systemWatcher(XylentScanner,thread_resume):
     subprocess.Popen([monitor_exe_path])
 
     output_txt_path = "output.txt"
-
-    # Check if the file exists and clear it
-    if os.path.exists(output_txt_path):
-        open(output_txt_path, 'w').close()
+    output_copy_path = "output_copy.txt"
 
     def scan_path(path):
         try:
@@ -31,12 +28,11 @@ def systemWatcher(XylentScanner,thread_resume):
             while thread_resume.is_set():
                 try:
                     # Copy the output.txt file
-                    shutil.copy(output_txt_path, "output_copy.txt")
+                    shutil.copy(output_txt_path, output_copy_path)
 
-                    with open("output_copy.txt", "r") as file:
+                    with open(output_copy_path, "r") as file:
                         file.seek(last_position)
                         changes = file.readlines()
-                        file.close()  # Close the file immediately after reading
 
                         if not changes:
                             # No new data, block until new lines are added
