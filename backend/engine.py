@@ -135,7 +135,7 @@ XylentScanner = Scanner(sha256_signatures=sha256_signatures_data, md5_signatures
 def startSystemWatcher(thread_resume):
     thread_resume = threading.Event()
     thread_resume.set()
-    systemWatcher(XylentScanner,SYSTEM_DRIVE, thread_resume)
+    systemWatcher(XylentScanner,thread_resume)
 thread_resume = threading.Event()
 realTime_thread = threading.Thread(
     target=startSystemWatcher,args=(thread_resume,))
@@ -389,4 +389,4 @@ def launchProgram():
         return "Cannot open: " + PROGRAM_PATH
     
 if __name__ == '__main__':
-   app.run(debug=False)
+   app.run(debug=False
