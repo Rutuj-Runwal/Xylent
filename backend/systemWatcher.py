@@ -2,7 +2,8 @@ import os
 from queue import Queue
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
-import threading 
+import threading
+
 verdict_queue = Queue()
 
 def systemWatcher(XylentScanner,thread_resume):
@@ -10,7 +11,6 @@ def systemWatcher(XylentScanner,thread_resume):
     subprocess.Popen([monitor_exe_path])
 
     output_txt_path = "output.txt"
-    last_position = 0
 
     def scan_path(path):
         try:
@@ -21,6 +21,7 @@ def systemWatcher(XylentScanner,thread_resume):
             print(f"Error processing {path}")
 
     def scan_changes():
+        last_position = 0
         with ThreadPoolExecutor(max_workers=100) as executor:
             while thread_resume.is_set():
                 try:
