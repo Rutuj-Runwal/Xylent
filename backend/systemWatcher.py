@@ -7,10 +7,10 @@ verdict_queue = Queue()
 
 def systemWatcher(XylentScanner,thread_resume):
     monitor_exe_path = os.path.abspath('.\\monitor\\target\\debug\\monitor.exe')
-    subprocess.Popen([monitor_exe_path, os.path.abspath(SYSTEM_DRIVE)])
+    subprocess.Popen([monitor_exe_path])
 
     output_txt_path = "output.txt"
-    last_positaion = 0
+    last_position = 0
 
     def scan_path(path):
         try:
@@ -37,7 +37,7 @@ def systemWatcher(XylentScanner,thread_resume):
                         # Collect paths to process simultaneously
                         paths_to_process = []
                         for change in changes:
-                            path_to_scan = os.path.abspath(os.path.join(SYSTEM_DRIVE, change.strip()))
+                            path_to_scan = os.path.abspath(change.strip())
                             print(path_to_scan)
 
                             try:
