@@ -27,7 +27,7 @@ def systemWatcher(XylentScanner, thread_resume):
         with ThreadPoolExecutor(max_workers=10000) as executor:
             while thread_resume.is_set():
                 try:
-                    # Kopya dosyayı oluştur
+                    # Copy the output.txt file
                     shutil.copy(output_txt_path, output_copy_path)
 
                     with open(output_copy_path, "r") as file:
