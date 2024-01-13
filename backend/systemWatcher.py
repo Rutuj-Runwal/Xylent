@@ -21,14 +21,6 @@ def systemWatcher(XylentScanner, thread_resume):
     output_txt_path = "output.txt"
     output_copy_path = "output_copy.txt"
 
-    def scan_path(path):
-        try:
-            verdict = XylentScanner.scanFile(path)
-            verdict_queue.put(verdict)  # Put the result in the queue
-        except Exception as e:
-            print(e)
-            print(f"Error processing {path}")
-
     def scan_changes():
         last_position = 0
         with ThreadPoolExecutor(max_workers=10000) as executor:
@@ -44,25 +36,24 @@ def systemWatcher(XylentScanner, thread_resume):
                         file.seek(last_position)
                         changes = file.readlines()
 
-                        if changes:
-                            for change in changes:
-                                path_to_scan = os.path.abspath(change.strip())
-                                print(path_to_scan)
+                    if changes:
+                        for change in changes:
+                            path_to_scan = os.path.abspath(change.strip())
+                            print(path_to_scan)
 
-                                if os.path.exists(path_to_scan):
-                                    running_files.append(path_to_scan)
-                                else:
-                                    print(f"File does not exist: {path_to_scan}")
+                            if os.path.exists(path_to_scan):
+                                running_files.append(path_to_scan)
+                            else:
+                                print(f"File does not exist: {path_to_scan}")
 
-                        # Process all collected paths simultaneously using ThreadPoolExecutor
-                        futures = [executor.submit(XylentScanner.scanFile, path) for path in running_files]
-                        for future in futures:
-                            try:
-                                verdict = future.result()
-                                verdict_queue.put(verdict)  # Put the result in the queue
-                            except Exception as e:
-                                print(e)
-                                print(f"Error scanning {path}")
+                    # Process all collected paths simultaneously using ThreadPoolExecutor
+                    futures = [executor.submit(XylentScanner.scanFile, path) for path in running_files]
+                    for future in futures:
+                        try:
+                            verdict = future.result()
+                            verdict_queue.put(verdict)  # Put the result in the queue
+                        except Exception as e:
+                            print(e)
 
                     # Update the last position to the end of the file
                     last_position = file.tell()
