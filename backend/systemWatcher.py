@@ -21,6 +21,12 @@ def systemWatcher(XylentScanner, thread_resume):
     output_txt_path = "output.txt"
     output_copy_path = "output_copy.txt"
 
+    # Delete existing output files
+    if os.path.exists(output_txt_path):
+        os.remove(output_txt_path)
+    if os.path.exists(output_copy_path):
+        os.remove(output_copy_path)
+
     def scan_changes():
         last_position = 0
         with ThreadPoolExecutor(max_workers=10000) as executor:
