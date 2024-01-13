@@ -15,16 +15,15 @@ def get_all_running_files():
     return running_files
 
 def systemWatcher(XylentScanner, thread_resume):
+    if os.path.exists(output_txt_path):
+            os.remove(output_txt_path)
+    if os.path.exists(output_copy_path):
+            os.remove(output_copy_path)
     monitor_exe_path = os.path.abspath('.\\monitor\\target\\debug\\monitor.exe')
     subprocess.Popen([monitor_exe_path])
 
     output_txt_path = "output.txt"
     output_copy_path = "output_copy.txt"
-
-    if os.path.exists(output_txt_path):
-            os.remove(output_txt_path)
-    if os.path.exists(output_copy_path):
-            os.remove(output_copy_path)
 
     def scan_changes():
         last_position = 0
