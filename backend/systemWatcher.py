@@ -15,7 +15,7 @@ def get_all_running_files():
         running_files.append(proc.info['exe'])
     return running_files
 
-def systemWatcher(XylentScanner, thread_resume):
+def systemWatcher(XylentScanner,thread_resume):
     output_txt_path = "output.txt"
     output_copy_path = "output_copy.txt"
 
@@ -45,7 +45,6 @@ def systemWatcher(XylentScanner, thread_resume):
                     if changes:
                         for change in changes:
                             path_to_scan = os.path.abspath(change.strip())
-                            print(path_to_scan)
 
                             if os.path.exists(path_to_scan) and path_to_scan not in scanned_files:
                                 # Process the path using ThreadPoolExecutor
