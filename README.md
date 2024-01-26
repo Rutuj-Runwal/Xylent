@@ -114,3 +114,24 @@ https://github.com/Rutuj-Runwal/Xylent/assets/59436520/99a0af23-0e1e-4f5e-abcc-c
 ### Acknowledgements and References
 - Use [signature base](https://github.com/Neo23x0/signature-base) by [Florian Roth](https://github.com/Neo23x0) under [Detection Rules license](https://raw.githubusercontent.com/Neo23x0/signature-base/master/LICENSE) for additional detection capabitiies. Place the yare rules in `/backend/signature-base/yara/`
 - Custom simple "Dummy" yara rules - [ruleA](https://github.com/Rutuj-Runwal/Xylent/blob/main/backend/signature-base/yara/xylent_test_pdf.yar) & [ruleB](https://github.com/Rutuj-Runwal/Xylent/blob/main/backend/signature-base/yara/xylent_test_word.yar) to detect test malware( of type .docx and .pdf) designed specifically for Xylent Antivirus
+
+### Warranty and License 
+
+
+    Xylent - A powerful antivirus built using Electron framework and python
+    Copyright (C) 2023-present Rutuj Runwal
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see {http://www.gnu.org/licenses/}.
+
+    Home: https://github.com/Rutuj-Runwal/Xylent
