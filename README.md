@@ -1,18 +1,5 @@
-#### Important Note
-
-This project is only inactively maintained. This means that I merge pull request for bug fixes and simple features that are easily integrated but new features will be delayed.<br/>
-The aim is to
-- stabilize the current release
-- minimize any performance issues
-
-I'm focusing on a CLI based version that will be a sohpisticated scanner, dropping (Real time protection)RTP support, this will be more streamlined and provide a faster experience.
-[Details for CLI project to be added soon!]
-
-Meanwhile check out Xylent below 👇🏻
-
-
 # Xylent
-A powerful antivirus built using Electron framework and python
+A powerful analysis built using Electron framework, Javascript ES6+, python and the flask server framework
 
 
 
