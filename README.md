@@ -21,26 +21,29 @@ A powerful analysis built using Electron framework, Javascript ES6+, python and 
 <br/>
 <br/>
 
-### Warranty and License 
+### Tech Stack:
+- Python 
+    - Flask 
+    - yara
+- ElectronJS
+- ReactJS
+- Webpack/babel
 
+> npm i
 
-    Xylent - A powerful antivirus built using Electron framework and python
-    Copyright (C) 2023-present Rutuj Runwal
+> npm run watch
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+> python engine.py
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+> npm start
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see {http://www.gnu.org/licenses/}.
+### Architecture
+- Flask backend: run using `python engine.py`
+- Electron based frontend built on ReactJS 
+    - `npm install` to install dependencies 
+    - `npm run watch` to compile using webpack 
+    - Finally `npm start` to run the app
 
-    Home: https://github.com/Rutuj-Runwal/Xylent
 
 ## Features Demonstration
 
@@ -105,34 +108,33 @@ https://github.com/Rutuj-Runwal/Xylent/assets/59436520/99a0af23-0e1e-4f5e-abcc-c
 - File entropy and ML based Heuristic
 - AI based malicious pattern detection
 - IDS/IPS & HIPS
-
-### Tech Stack:
-- Python 
-    - Flask 
-    - yara
-- ElectronJS
-- ReactJS
-- Webpack/babel
-
-> npm i
-
-> npm run watch
-
-> python engine.py
-
-> npm start
-
-### Architecture
-- Flask backend: run using `python engine.py`
-- Electron based frontend built on ReactJS 
-    - `npm install` to install dependencies 
-    - `npm run watch` to compile using webpack 
-    - Finally `npm start` to run the app
  
  ### Target Environment
  - Currently in development with main focus towards Windows [both 32-bit and 64x] systems
  - Requires Administrator privilages for certain features
  - Extending capabilites towards Linux at a later stage
+
+### Warranty and License 
+
+
+    Xylent - A powerful antivirus built using Electron framework and python
+    Copyright (C) 2023-present Rutuj Runwal
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see {http://www.gnu.org/licenses/}.
+
+    Home: https://github.com/Rutuj-Runwal/Xylent
+
 
 ### Acknowledgements and References
 - Use [signature base](https://github.com/Neo23x0/signature-base) by [Florian Roth](https://github.com/Neo23x0) under [Detection Rules license](https://raw.githubusercontent.com/Neo23x0/signature-base/master/LICENSE) for additional detection capabitiies. Place the yare rules in `/backend/signature-base/yara/`
