@@ -42,12 +42,6 @@ A powerful analysis tool built using Electron framework, Javascript ES6+, python
     - `npm install` to install dependencies 
     - `npm run watch` to compile using webpack 
     - Finally `npm start` to run the app
-      
-### Architecture deep-dive
-
-- Xylent consists of a sefver-client based model. The flask(python) based server acts as a "engine" running diagnostics and various analysis such as pattern based matching systems. The client or "the frontend" is a React based application that acts as an interface for the server to relay information. It provides the user with a UI to interact with the server and perform actions with it and also relay notificatons to the user's system based on certain server infromation.
-- Scanning and asnalysis occurs on a per file basis where the server checks if a file exists, conveys that info to the client and proceeds with performing static analysis on the given file followed by Yara based pattern matching. In case of a folder or multi file input the engine enumenrates the file in a Unix system order preserving the hierarchy of the folder recursively going through one file at a time.
-- Caching: caching is critical for the functioning of Xylent. Along with memory and file size limits set up to ensure smooth operation of the server. Caching stores the verdicts of previous file analysis and uses the cache (if there is no change in file hash MD5/SHA) for subsequent query of the file. This makes scanning faster and reliable. Limits are also setup on type of extensions to scan, the seleciton of file extensions is based on in depth data analaysis of 1000000 samples sorted by thier occurence accounting top 10 most file extension occurence into consideration.
 
 ## Features Demonstration
 
@@ -94,6 +88,11 @@ https://github.com/Rutuj-Runwal/Xylent/assets/59436520/99a0af23-0e1e-4f5e-abcc-c
 
 
 
+### Architecture deep-dive
+
+- Xylent consists of a sefver-client based model. The flask(python) based server acts as a "engine" running diagnostics and various analysis such as pattern based matching systems. The client or "the frontend" is a React based application that acts as an interface for the server to relay information. It provides the user with a UI to interact with the server and perform actions with it and also relay notificatons to the user's system based on certain server infromation.
+- Scanning and asnalysis occurs on a per file basis where the server checks if a file exists, conveys that info to the client and proceeds with performing static analysis on the given file followed by Yara based pattern matching. In case of a folder or multi file input the engine enumenrates the file in a Unix system order preserving the hierarchy of the folder recursively going through one file at a time.
+- Caching: caching is critical for the functioning of Xylent. Along with memory and file size limits set up to ensure smooth operation of the server. Caching stores the verdicts of previous file analysis and uses the cache (if there is no change in file hash MD5/SHA) for subsequent query of the file. This makes scanning faster and reliable. Limits are also setup on type of extensions to scan, the seleciton of file extensions is based on in depth data analaysis of 1000000 samples sorted by thier occurence accounting top 10 most file extension occurence into consideration.
 
 ### Expected Features/Coming Soon
 - Fuzzy Hashing based detection
